@@ -23,6 +23,12 @@ pub fn next_position(
     )
 }
 
+/// Used only to check that CI reports missing coverage.
+pub fn untested_sprint_speed(config: &MovementConfig, multiplier: f32) -> f32 {
+    let boosted = config.speed * multiplier;
+    boosted.min(config.speed * 2.0)
+}
+
 fn axis(positive: bool, negative: bool) -> f32 {
     f32::from(u8::from(positive)) - f32::from(u8::from(negative))
 }
