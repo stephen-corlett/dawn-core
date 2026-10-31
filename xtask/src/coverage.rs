@@ -17,6 +17,10 @@ pub const EXCLUDED_PATHS: [&str; 6] = [
 /// The lowest share of changed executable lines that tests must run.
 pub const MIN_DIFF_COVERAGE_PERCENT: f64 = 90.0;
 
+/// Limits that keep the pull request comment short. The job summary has every line.
+const COMMENT_MAX_FILES: usize = 10;
+const COMMENT_MAX_RANGES: usize = 6;
+
 /// Line numbers, per file, that a report or diff mentions.
 pub type LinesByFile = BTreeMap<String, BTreeSet<usize>>;
 
@@ -144,6 +148,43 @@ impl DiffCoverage {
         text
     }
 
+    /// A short version of the results for a pull request comment.
+    pub fn comment_markdown(&self) -> String {
+        let icon = if self.passes() { "✅" } else { "❌" };
+        let mut text = format!(
+            "### {icon} Diff coverage: {:.1}% (minimum {MIN_DIFF_COVERAGE_PERCENT}%)\n\n",
+            self.percent(),
+        );
+        if self.executable_lines == 0 {
+            text.push_str("No executable lines changed.\n");
+            return text;
+        }
+        text.push_str(&format!(
+            "{} of {} changed lines covered.\n",
+            self.executable_lines - self.missing_lines(),
+            self.executable_lines,
+        ));
+        if self.missing.is_empty() {
+            return text;
+        }
+
+        text.push_str("\n| File | Missing lines | Suggested test |\n|---|---|---|\n");
+        for (file, lines) in self.missing.iter().take(COMMENT_MAX_FILES) {
+            let level = suggested_level(file);
+            text.push_str(&format!(
+                "| `{file}` | {} | {level} |\n",
+                shown_ranges(lines)
+            ));
+        }
+        if self.missing.len() > COMMENT_MAX_FILES {
+            text.push_str(&format!(
+                "\n{} more files are in the job summary.\n",
+                self.missing.len() - COMMENT_MAX_FILES,
+            ));
+        }
+        text
+    }
+
     /// One GitHub annotation per missing line, shown inline on the pull request.
     pub fn annotations(&self) -> Vec<String> {
         self.missing_entries()
@@ -162,6 +203,34 @@ impl DiffCoverage {
             lines.iter().map(move |line| (file.as_str(), *line, level))
         })
     }
+}
+
+/// Writes lines as short ranges, such as `3-5, 9, +2 more`.
+fn shown_ranges(lines: &BTreeSet<usize>) -> String {
+    let mut ranges: Vec<(usize, usize)> = Vec::new();
+    for &line in lines {
+        match ranges.last_mut() {
+            Some((_, end)) if *end + 1 == line => *end = line,
+            _ => ranges.push((line, line)),
+        }
+    }
+
+    let hidden = ranges.len().saturating_sub(COMMENT_MAX_RANGES);
+    let mut shown: Vec<String> = ranges
+        .iter()
+        .take(COMMENT_MAX_RANGES)
+        .map(|(start, end)| {
+            if start == end {
+                start.to_string()
+            } else {
+                format!("{start}-{end}")
+            }
+        })
+        .collect();
+    if hidden > 0 {
+        shown.push(format!("+{hidden} more"));
+    }
+    shown.join(", ")
 }
 
 /// Compares changed lines with coverage. Lines missing from the report, such as
@@ -415,6 +484,100 @@ mod tests {
 
                 test("nothing is found", || {
                     assert_eq!(start, None);
+                });
+            });
+        });
+
+        given("a failing result with grouped lines", || {
+            let changed = lines("crates/movement/src/rules.rs", &[3, 4, 5, 9]);
+            let entries = [(3, 0), (4, 0), (5, 0), (9, 0)];
+            let report = counts("crates/movement/src/rules.rs", &entries);
+
+            when("it's written as a comment", || {
+                let comment = diff_coverage(&changed, &report).comment_markdown();
+
+                test("the heading shows the failure", || {
+                    assert!(comment.starts_with("### ❌ Diff coverage: 0.0% (minimum 90%)"));
+                });
+
+                test("the lines are shown as ranges", || {
+                    assert!(comment.contains("| 3-5, 9 | unit |"));
+                });
+            });
+        });
+
+        given("a fully covered result", || {
+            let changed = lines("crates/movement/src/rules.rs", &[5]);
+            let report = counts("crates/movement/src/rules.rs", &[(5, 1)]);
+
+            when("it's written as a comment", || {
+                let comment = diff_coverage(&changed, &report).comment_markdown();
+
+                test("it passes without a table", || {
+                    assert!(comment.starts_with("### ✅ Diff coverage: 100.0%"));
+                    assert!(comment.contains("1 of 1 changed lines covered."));
+                    assert!(!comment.contains('|'));
+                });
+            });
+        });
+
+        given("a passing result with a missing line", || {
+            let numbers: Vec<usize> = (1..=10).collect();
+            let entries: Vec<(usize, u64)> =
+                numbers.iter().map(|&n| (n, u64::from(n > 1))).collect();
+            let changed = lines("crates/movement/src/rules.rs", &numbers);
+            let report = counts("crates/movement/src/rules.rs", &entries);
+
+            when("it's written as a comment", || {
+                let comment = diff_coverage(&changed, &report).comment_markdown();
+
+                test("it passes and still names the line", || {
+                    assert!(comment.starts_with("### ✅ Diff coverage: 90.0%"));
+                    assert!(comment.contains("| 1 | unit |"));
+                });
+            });
+        });
+
+        given("a diff with no executable lines", || {
+            let result = DiffCoverage::default();
+
+            when("it's written as a comment", || {
+                let comment = result.comment_markdown();
+
+                test("it says so", || {
+                    assert!(comment.contains("No executable lines changed."));
+                });
+            });
+        });
+
+        given("more scattered lines than a comment should show", || {
+            let scattered: BTreeSet<usize> = (1..=8).map(|line| line * 10).collect();
+
+            when("they're written as ranges", || {
+                let shown = shown_ranges(&scattered);
+
+                test("the rest are counted", || {
+                    assert_eq!(shown, "10, 20, 30, 40, 50, 60, +2 more");
+                });
+            });
+        });
+
+        given("more files than a comment should show", || {
+            let missing: LinesByFile = (0..12)
+                .map(|file| (format!("crates/a/src/f{file}.rs"), BTreeSet::from([1])))
+                .collect();
+            let result = DiffCoverage {
+                executable_lines: 12,
+                missing,
+            };
+
+            when("it's written as a comment", || {
+                let comment = result.comment_markdown();
+                let rows = comment.lines().filter(|line| line.contains(".rs")).count();
+
+                test("only the limit is listed", || {
+                    assert_eq!(rows, 10);
+                    assert!(comment.contains("2 more files are in the job summary."));
                 });
             });
         });
