@@ -59,7 +59,8 @@ fn layer_of(name: &str) -> Layer {
 fn may_depend_on(from: Layer, to: Layer) -> bool {
     use Layer::*;
     match from {
-        Foundation | Library | Tooling => to == Library,
+        Foundation => false,
+        Library | Tooling => to == Library,
         Protocol | Module => matches!(to, Library | Foundation | Module),
         AppServer | AppClient => {
             matches!(to, Library | Foundation | Protocol | Module | TestSupport)

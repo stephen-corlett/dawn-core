@@ -2708,6 +2708,7 @@ dependencies = [
  "bevy",
  "clap",
  "dotenvy",
+ "env_config",
  "foundation",
  "lightyear",
  "movement",
@@ -3376,6 +3377,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_config"
+version = "0.1.0"
+dependencies = [
+ "bdd",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3575,7 +3583,6 @@ dependencies = [
 name = "foundation"
 version = "0.1.0"
 dependencies = [
- "bdd",
  "bevy",
  "lightyear",
  "serde",
@@ -7593,6 +7600,7 @@ dependencies = [
  "bevy",
  "clap",
  "dotenvy",
+ "env_config",
  "foundation",
  "lightyear",
  "movement",

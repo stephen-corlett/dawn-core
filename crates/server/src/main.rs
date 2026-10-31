@@ -1,7 +1,7 @@
 use bevy::log::LogPlugin;
 use clap::Parser;
-use foundation::config::EnvValues;
-use server::{ServerSettings, build_app};
+use server::build_app;
+use server::config::ServerConfig;
 use std::process::ExitCode;
 
 #[derive(Parser)]
@@ -17,18 +17,18 @@ fn main() -> ExitCode {
     // `.env` is optional, because deployments usually set real environment variables.
     dotenvy::dotenv().ok();
 
-    let mut settings = match ServerSettings::load(&EnvValues::read()) {
-        Ok(settings) => settings,
+    let mut config = match ServerConfig::from_process() {
+        Ok(config) => config,
         Err(error) => {
             eprintln!("server: {error}");
             return ExitCode::FAILURE;
         }
     };
     if let Some(port) = args.port {
-        settings.bind_addr.set_port(port);
+        config.bind_addr.set_port(port);
     }
 
-    let mut app = build_app(settings);
+    let mut app = build_app(config);
     app.add_plugins(LogPlugin::default());
     app.run();
     ExitCode::SUCCESS

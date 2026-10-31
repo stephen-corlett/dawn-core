@@ -1,0 +1,12 @@
+[package]
+name = "env_config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dev-dependencies]
+bdd.workspace = true
+
+[lints]
+workspace = true

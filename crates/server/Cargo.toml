@@ -9,6 +9,7 @@ publish.workspace = true
 bevy.workspace = true
 clap.workspace = true
 dotenvy.workspace = true
+env_config.workspace = true
 foundation.workspace = true
 movement = { workspace = true, features = ["server"] }
 protocol.workspace = true

@@ -5,8 +5,7 @@
 use crate::local_addr;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
-use foundation::config::{NetworkConfig, Secrets};
-use foundation::net::{SEND_INTERVAL, tick_duration};
+use foundation::net::{DEV_PRIVATE_KEY, PROTOCOL_ID, SEND_INTERVAL, tick_duration};
 use foundation::player::PlayerId;
 use lightyear::connection::client::Connected;
 use lightyear::prelude::server::*;
@@ -33,8 +32,8 @@ pub fn stub_server_app(port: u16) -> App {
         .world_mut()
         .spawn((
             NetcodeServer::new(NetcodeConfig {
-                protocol_id: NetworkConfig::dev_default().protocol_id,
-                private_key: Secrets::dev_default().private_key,
+                protocol_id: PROTOCOL_ID,
+                private_key: DEV_PRIVATE_KEY,
                 ..default()
             }),
             LocalAddr(local_addr(port)),

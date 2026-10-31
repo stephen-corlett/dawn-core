@@ -6,7 +6,7 @@ mod players;
 mod prediction;
 
 use ::client::build_headless_app;
-use ::client::network::ClientSettings;
+use ::client::config::ClientConfig;
 use bevy::prelude::*;
 use foundation::player::PlayerId;
 use lightyear::prelude::*;
@@ -25,9 +25,9 @@ fn connected_client(port: u16) -> (App, App) {
 }
 
 fn client_app(port: u16) -> App {
-    let mut app = build_headless_app(ClientSettings {
+    let mut app = build_headless_app(ClientConfig {
         server_addr: local_addr(port),
-        ..ClientSettings::dev_default()
+        ..ClientConfig::dev_default()
     });
     app.insert_resource(ButtonInput::<KeyCode>::default());
     prepare(app)

@@ -12,6 +12,13 @@ pub const SEND_INTERVAL: Duration = Duration::from_millis(50);
 /// Increase this whenever a protocol change breaks older clients.
 pub const PROTOCOL_ID: u64 = 1;
 
+/// Selects `development` or `production`. Unset means production.
+pub const ENVIRONMENT_VAR: &str = "DAWN_ENV";
+
+/// Signs connections in development, and the client and server must agree on it. The
+/// server's config rejects this key in production.
+pub const DEV_PRIVATE_KEY: [u8; 32] = [0; 32];
+
 pub const DEFAULT_SERVER_PORT: u16 = 5000;
 
 pub fn tick_duration() -> Duration {

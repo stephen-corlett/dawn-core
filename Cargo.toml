@@ -11,6 +11,7 @@ publish = false
 [workspace.dependencies]
 bdd = { path = "libs/bdd" }
 client = { path = "crates/client" }
+env_config = { path = "libs/env_config" }
 foundation = { path = "crates/foundation" }
 movement = { path = "crates/movement" }
 protocol = { path = "crates/protocol" }

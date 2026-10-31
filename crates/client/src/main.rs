@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 use clap::Parser;
+use client::config::ClientConfig;
 use client::movement_plugin;
-use client::network::{ClientNetworkPlugin, ClientSettings};
+use client::network::ClientNetworkPlugin;
 use client::view::ViewPlugin;
 use core::net::SocketAddr;
-use foundation::config::EnvValues;
 use foundation::net::tick_duration;
 use lightyear::prelude::client::ClientPlugins;
 use protocol::ProtocolPlugin;
@@ -27,16 +27,16 @@ fn main() -> ExitCode {
     // `.env` is optional, and only development reads a key from it.
     dotenvy::dotenv().ok();
 
-    let mut settings = match ClientSettings::load(&EnvValues::read()) {
-        Ok(settings) => settings,
+    let mut config = match ClientConfig::from_process() {
+        Ok(config) => config,
         Err(error) => {
             eprintln!("client: {error}");
             return ExitCode::FAILURE;
         }
     };
-    settings.client_id = args.client_id;
+    config.client_id = args.client_id;
     if let Some(server) = args.server {
-        settings.server_addr = server;
+        config.server_addr = server;
     }
 
     let mut app = App::new();
@@ -52,7 +52,7 @@ fn main() -> ExitCode {
     });
     app.add_plugins(ProtocolPlugin);
     app.add_plugins((
-        ClientNetworkPlugin { settings },
+        ClientNetworkPlugin { config },
         movement_plugin(),
         ViewPlugin,
     ));

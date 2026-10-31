@@ -46,6 +46,7 @@ crates/
   e2e/           Tests that run a real server and clients together
 libs/
   bdd/           The #[spec] macro for given, when, and test steps
+  env_config/    Typed environment variables, inspired by envalid
   sandbox_kit/   Shared window and scene for each module's examples/sandbox.rs
 xtask/           Development launcher and project checks
 ```

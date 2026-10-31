@@ -27,7 +27,7 @@ auction house has rich rules of its own, while movement is much thinner today.
 | Layer | Crates | May depend on |
 |---|---|---|
 | Library | Anything in `libs/` | Other libraries only |
-| Foundation | `foundation` | Only `bevy`, `lightyear`, and `serde`, plus `bdd` for tests |
+| Foundation | `foundation` | Only `bevy`, `lightyear`, and `serde` |
 | Game module | `<module>` | Libraries, foundation, other game modules |
 | Protocol | `protocol` | Libraries, foundation, game modules |
 | Server app | `server` | Libraries, foundation, protocol, game modules |
@@ -326,25 +326,39 @@ inputs, such as damage formulas.
 
 ## Configuration
 
-`foundation::config` separates what can be committed from what can't. Game modules
-still receive tuning through plugins rather than reading environment settings:
+Each app declares its own environment variables, so client settings never sit beside
+server secrets. `libs/env_config` is a small library inspired by Node's `envalid`:
+
+```rust
+let mut env = Env::from_process(ENVIRONMENT_VAR);
+let bind_addr = env.read(
+    "DAWN_BIND_ADDR",
+    parsed::<SocketAddr>()
+        .desc("Address the server listens on")
+        .default(public_addr)
+        .dev_default(local_addr),
+);
+env.validate()?; // Reports every problem at once
+```
 
 | Kind | Examples | Where it lives |
 |---|---|---|
-| Committed settings | Addresses, protocol version | `NetworkConfig::default()` for production, `NetworkConfig::dev_default()` for development |
+| Committed settings | Addresses | `default` and `dev_default`, in `crates/server/src/config.rs` or `crates/client/src/config.rs` |
 | Secrets | Signing keys, database passwords | Environment variables, supplied locally by a gitignored `.env` |
 
 - **Choosing an environment:** `DAWN_ENV` is `development` or `production`. Unset means
   production, so a misconfigured server refuses to start. `just` commands set
   `development`.
-- **Production secrets:** The server refuses to start without a real `DAWN_PRIVATE_KEY`,
-  and it rejects the all-zero development key.
-- **Development secrets:** `Secrets::dev_default()` is a placeholder key, so a fresh
-  checkout runs with no setup. It only exists for development and tests.
+- **Required variables:** A variable with no `default` or `dev_default` is required.
+- **Production secrets:** Give a secret no `default`. `DAWN_PRIVATE_KEY` is required in
+  production, and `forbid_in_production` rejects the development key there.
+- **Development secrets:** `DEV_PRIVATE_KEY` is a shared placeholder, so a fresh checkout
+  runs with no setup and the client and server can connect.
 - **Client limits:** Clients never receive the production key, because it would ship
   to players. A production client needs a login service to issue connection tokens,
   so it refuses to start until one exists.
-- **Adding a secret:** Add it to `Secrets` and `.env.example`, with no real value.
+- **Adding a variable:** Declare it in the app that uses it, and add it to `.env.example`
+  with no real value. Game modules receive values through plugins instead.
 
 ## Network protocol
 

@@ -5,13 +5,14 @@ mod connections;
 mod movement;
 
 use bevy::prelude::*;
-use server::{ServerSettings, build_app};
+use server::build_app;
+use server::config::ServerConfig;
 use test_support::{local_addr, prepare};
 
 /// Each test uses its own port, so tests can run at the same time.
 fn server_app(port: u16) -> App {
-    prepare(build_app(ServerSettings {
+    prepare(build_app(ServerConfig {
         bind_addr: local_addr(port),
-        ..ServerSettings::dev_default()
+        ..ServerConfig::dev_default()
     }))
 }
