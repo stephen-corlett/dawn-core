@@ -2,8 +2,9 @@
 //! The clients have no window, so rendering isn't covered here.
 
 use ::client::build_headless_app;
-use ::client::network::ClientSettings;
-use ::server::{ServerSettings, build_app};
+use ::client::config::ClientConfig;
+use ::server::build_app;
+use ::server::config::ServerConfig;
 use bdd::spec;
 use bevy::prelude::*;
 use foundation::player::PlayerId;
@@ -12,17 +13,17 @@ use movement::PlayerPosition;
 use test_support::{count, local_addr, prepare, run_until};
 
 fn server_app(port: u16) -> App {
-    prepare(build_app(ServerSettings {
+    prepare(build_app(ServerConfig {
         bind_addr: local_addr(port),
-        ..default()
+        ..ServerConfig::dev_default()
     }))
 }
 
 fn client_app(port: u16, client_id: u64) -> App {
-    let mut app = build_headless_app(ClientSettings {
+    let mut app = build_headless_app(ClientConfig {
         client_id,
         server_addr: local_addr(port),
-        ..default()
+        ..ClientConfig::dev_default()
     });
     app.insert_resource(ButtonInput::<KeyCode>::default());
     prepare(app)

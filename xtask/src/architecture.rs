@@ -8,9 +8,6 @@ use std::collections::{BTreeMap, BTreeSet};
 /// `foundation` may only use these external crates.
 const FOUNDATION_EXTERNAL_DEPS: [&str; 3] = ["bevy", "lightyear", "serde"];
 
-/// Keeps `foundation` small, because every line of it can trigger a full rebuild.
-pub const FOUNDATION_MAX_LINES: usize = 300;
-
 /// A workspace crate and the dependencies it declares, of every kind.
 #[derive(Clone, Debug)]
 pub struct CrateInfo {

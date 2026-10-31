@@ -2707,6 +2707,8 @@ dependencies = [
  "bdd",
  "bevy",
  "clap",
+ "dotenvy",
+ "env_config",
  "foundation",
  "lightyear",
  "movement",
@@ -3250,6 +3252,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenvy"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
+
+[[package]]
 name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3366,6 +3374,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "env_config"
+version = "0.1.0"
+dependencies = [
+ "bdd",
 ]
 
 [[package]]
@@ -7584,6 +7599,8 @@ dependencies = [
  "bdd",
  "bevy",
  "clap",
+ "dotenvy",
+ "env_config",
  "foundation",
  "lightyear",
  "movement",

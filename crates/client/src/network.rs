@@ -1,9 +1,9 @@
 //! Connects to the server. This works without a window, so tests can run it
 //! headlessly.
 
+use crate::config::ClientConfig;
 use bevy::prelude::*;
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
-use foundation::net::{DEFAULT_SERVER_ADDR, DEV_PRIVATE_KEY, PROTOCOL_ID};
 use lightyear::prelude::client::{
     InputDelayConfig, InputTimelineConfig, NetcodeClient, NetcodeConfig,
 };
@@ -12,32 +12,13 @@ use lightyear::prelude::*;
 /// Lets the server notice a closed client quickly during development.
 const CLIENT_TIMEOUT_SECS: i32 = 3;
 
-#[derive(Clone, Debug)]
-pub struct ClientSettings {
-    pub client_id: u64,
-    pub server_addr: SocketAddr,
-    pub protocol_id: u64,
-    pub private_key: [u8; 32],
-}
-
-impl Default for ClientSettings {
-    fn default() -> Self {
-        Self {
-            client_id: 1,
-            server_addr: DEFAULT_SERVER_ADDR,
-            protocol_id: PROTOCOL_ID,
-            private_key: DEV_PRIVATE_KEY,
-        }
-    }
-}
-
 pub struct ClientNetworkPlugin {
-    pub settings: ClientSettings,
+    pub config: ClientConfig,
 }
 
 impl Plugin for ClientNetworkPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Settings(self.settings.clone()));
+        app.insert_resource(Settings(self.config.clone()));
         app.insert_resource(PredictionManager::default());
         app.insert_resource(
             InputTimelineConfig::default().with_input_delay(InputDelayConfig::no_input_delay()),
@@ -47,7 +28,7 @@ impl Plugin for ClientNetworkPlugin {
 }
 
 #[derive(Resource)]
-struct Settings(ClientSettings);
+struct Settings(ClientConfig);
 
 fn connect(mut commands: Commands, settings: Res<Settings>) -> Result {
     let settings = &settings.0;

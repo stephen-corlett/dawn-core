@@ -11,6 +11,7 @@ publish = false
 [workspace.dependencies]
 bdd = { path = "libs/bdd" }
 client = { path = "crates/client" }
+env_config = { path = "libs/env_config" }
 foundation = { path = "crates/foundation" }
 movement = { path = "crates/movement" }
 protocol = { path = "crates/protocol" }
@@ -27,6 +28,7 @@ bevy = { version = "0.20", default-features = false, features = [
   "bevy_state",
 ] }
 clap = { version = "4", features = ["derive"] }
+dotenvy = "0.15"
 lightyear = { version = "0.31", default-features = false, features = [
   "std",
   "client",
@@ -48,10 +50,14 @@ unsafe_code = "forbid"
 too_many_arguments = "allow"
 type_complexity = "allow"
 
+# Debug info is most of a build's disk use. Line tables keep readable backtraces for
+# our code, and dependencies don't need any.
 [profile.dev]
+debug = "line-tables-only"
 opt-level = 1
 
 [profile.dev.package."*"]
+debug = false
 opt-level = 3
 
 [profile.release]

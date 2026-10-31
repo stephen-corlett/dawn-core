@@ -46,6 +46,7 @@ crates/
   e2e/           Tests that run a real server and clients together
 libs/
   bdd/           The #[spec] macro for given, when, and test steps
+  env_config/    Typed environment variables, inspired by envalid
   sandbox_kit/   Shared window and scene for each module's examples/sandbox.rs
 xtask/           Development launcher and project checks
 ```
@@ -59,7 +60,9 @@ AI coding agents should start with [AGENTS.md](AGENTS.md).
 There are unit, integration, and end-to-end tests. See the testing
 levels in [docs/architecture.md](docs/architecture.md).
 
-## Security note
+## Configuration
 
-`DEV_PRIVATE_KEY` in `foundation` is a placeholder for local development. Don't
-expose a server using this key to the internet.
+`just` commands run in development with no setup. To set real values, copy
+`.env.example` to `.env`, which Git ignores. Servers default to production and refuse
+to start without a real `DAWN_PRIVATE_KEY`. See
+[docs/architecture.md](docs/architecture.md).

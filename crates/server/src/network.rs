@@ -1,6 +1,6 @@
 //! Accepts client connections and spawns a player for each one.
 
-use crate::ServerSettings;
+use crate::config::ServerConfig;
 use bevy::prelude::*;
 use foundation::net::SEND_INTERVAL;
 use foundation::player::PlayerId;
@@ -14,13 +14,13 @@ use movement::PlayerPosition;
 const READY_LINE: &str = "DAWN_SERVER_READY";
 
 pub struct ServerNetworkPlugin {
-    pub settings: ServerSettings,
+    pub config: ServerConfig,
 }
 
 impl Plugin for ServerNetworkPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ReplicationMetadata::new(SEND_INTERVAL));
-        app.insert_resource(Settings(self.settings.clone()));
+        app.insert_resource(Settings(self.config.clone()));
         app.add_systems(Startup, start_server);
         app.add_observer(announce_ready);
         app.add_observer(handle_new_link);
@@ -29,7 +29,7 @@ impl Plugin for ServerNetworkPlugin {
 }
 
 #[derive(Resource)]
-struct Settings(ServerSettings);
+struct Settings(ServerConfig);
 
 fn start_server(mut commands: Commands, settings: Res<Settings>) {
     let settings = &settings.0;

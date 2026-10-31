@@ -12,6 +12,8 @@ dev = ["bevy/dynamic_linking"]
 [dependencies]
 bevy = { workspace = true, features = ["default"] }
 clap.workspace = true
+dotenvy.workspace = true
+env_config.workspace = true
 foundation.workspace = true
 movement = { workspace = true, features = ["client"] }
 protocol.workspace = true

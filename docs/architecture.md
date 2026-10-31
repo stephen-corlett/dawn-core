@@ -142,13 +142,12 @@ Update this table whenever a game module is added or its dependencies change.
 
 ## What goes in `foundation`
 
-Every crate depends on `foundation`, so changing it rebuilds the whole game. It's
-the most expensive place to put anything, and the default answer is no.
+Every crate can depend on `foundation`, and changing it rebuilds the game. Use your
+judgment, because no count or size decides this **(review)**. Something belongs in
+`foundation` if all of these are true:
 
-Something belongs in `foundation` only if all of these are true:
-
-1. **Used widely:** Three or more game modules need it. If fewer do, it belongs to one
-   of them, and the others depend on that game module's shared crate.
+1. **Needed everywhere:** It's reasonable that every crate does or would need it. If
+   only part of the game would, it belongs to a game module instead.
 2. **No clear owner:** It isn't a concept that one game module could reasonably own.
    Health belongs to combat, even if many game modules read it.
 3. **No game rules:** It's an identifier, a setting, or a basic type. It contains
@@ -158,9 +157,8 @@ Something belongs in `foundation` only if all of these are true:
 
 Before adding to it, ask whether the change is worth rebuilding every crate.
 
-The architecture check also limits `foundation` to its allowed external crates and
-a maximum line count. Don't raise either limit to make a change fit. Find the
-owning game module instead, and raise a limit only as a deliberate design decision.
+The architecture check limits `foundation` to its allowed external crates, because
+every crate inherits them. Don't add to that list without a deliberate design decision.
 
 ## Give game modules library-style boundaries
 
@@ -326,6 +324,42 @@ inputs, such as damage formulas.
   server code. If they did, a test could pass because both sides share a bug.
 - Give every networked test its own port. Tests run at the same time.
 - Rendering isn't covered by automated tests yet.
+
+## Configuration
+
+Each app declares its own environment variables, so client settings never sit beside
+server secrets. `libs/env_config` is a small library inspired by Node's `envalid`:
+
+```rust
+let mut env = Env::from_process(ENVIRONMENT_VAR);
+let bind_addr = env.read(
+    "DAWN_BIND_ADDR",
+    parsed::<SocketAddr>()
+        .desc("Address the server listens on")
+        .default(public_addr)
+        .dev_default(local_addr),
+);
+env.validate()?; // Reports every problem at once
+```
+
+| Kind | Examples | Where it lives |
+|---|---|---|
+| Committed settings | Addresses | `default` and `dev_default`, in `crates/server/src/config.rs` or `crates/client/src/config.rs` |
+| Secrets | Signing keys, database passwords | Environment variables, supplied locally by a gitignored `.env` |
+
+- **Choosing an environment:** `DAWN_ENV` is `development` or `production`. Unset means
+  production, so a misconfigured server refuses to start. `just` commands set
+  `development`.
+- **Required variables:** A variable with no `default` or `dev_default` is required.
+- **Production secrets:** Give a secret no `default`. `DAWN_PRIVATE_KEY` is required in
+  production, and `forbid_in_production` rejects the development key there.
+- **Development secrets:** `DEV_PRIVATE_KEY` is a shared placeholder, so a fresh checkout
+  runs with no setup and the client and server can connect.
+- **Client limits:** Clients never receive the production key, because it would ship
+  to players. A production client needs a login service to issue connection tokens,
+  so it refuses to start until one exists.
+- **Adding a variable:** Declare it in the app that uses it, and add it to `.env.example`
+  with no real value. Game modules receive values through plugins instead.
 
 ## Network protocol
 
