@@ -5,7 +5,7 @@
 use crate::local_addr;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
-use config::{NetworkConfig, Secrets};
+use foundation::config::{NetworkConfig, Secrets};
 use foundation::net::{SEND_INTERVAL, tick_duration};
 use foundation::player::PlayerId;
 use lightyear::connection::client::Connected;

@@ -3,8 +3,8 @@
 use crate::local_addr;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
-use config::{NetworkConfig, Secrets};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
+use foundation::config::{NetworkConfig, Secrets};
 use foundation::net::tick_duration;
 use foundation::player::PlayerId;
 use lightyear::prelude::client::input::*;

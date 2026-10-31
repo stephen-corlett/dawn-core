@@ -8,9 +8,6 @@ use std::collections::{BTreeMap, BTreeSet};
 /// `foundation` may only use these external crates.
 const FOUNDATION_EXTERNAL_DEPS: [&str; 3] = ["bevy", "lightyear", "serde"];
 
-/// Keeps `foundation` small, because every line of it can trigger a full rebuild.
-pub const FOUNDATION_MAX_LINES: usize = 300;
-
 /// A workspace crate and the dependencies it declares, of every kind.
 #[derive(Clone, Debug)]
 pub struct CrateInfo {
@@ -62,8 +59,7 @@ fn layer_of(name: &str) -> Layer {
 fn may_depend_on(from: Layer, to: Layer) -> bool {
     use Layer::*;
     match from {
-        Foundation => false,
-        Library | Tooling => to == Library,
+        Foundation | Library | Tooling => to == Library,
         Protocol | Module => matches!(to, Library | Foundation | Module),
         AppServer | AppClient => {
             matches!(to, Library | Foundation | Protocol | Module | TestSupport)

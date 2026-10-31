@@ -7,7 +7,6 @@ publish.workspace = true
 
 [dependencies]
 bevy.workspace = true
-config.workspace = true
 foundation.workspace = true
 movement.workspace = true
 protocol.workspace = true

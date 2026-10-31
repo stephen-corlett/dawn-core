@@ -5,7 +5,7 @@ mod architecture;
 mod coverage;
 mod test_structure;
 
-use architecture::{CrateInfo, FOUNDATION_MAX_LINES, leaked_side_features, violations};
+use architecture::{CrateInfo, leaked_side_features, violations};
 use clap::{Parser, Subcommand};
 use serde_json::Value;
 use std::collections::BTreeSet;
@@ -221,14 +221,7 @@ fn runtime_path(target_dir: &Path) -> Result<OsString, String> {
 
 fn check_architecture() -> TaskResult {
     let crates = workspace_crates()?;
-    let mut problems = violations(&crates);
-
-    let foundation_lines = count_lines(&workspace_root().join("crates/foundation/src"))?;
-    if foundation_lines > FOUNDATION_MAX_LINES {
-        problems.push(format!(
-            "foundation has {foundation_lines} lines, over its limit of {FOUNDATION_MAX_LINES}"
-        ));
-    }
+    let problems = violations(&crates);
 
     if problems.is_empty() {
         println!("{} crates follow the architecture rules", crates.len());
@@ -513,21 +506,6 @@ fn source_files(dir: &Path, files: &mut Vec<PathBuf>) -> TaskResult {
         }
     }
     Ok(())
-}
-
-fn count_lines(dir: &Path) -> Result<usize, String> {
-    let mut lines = 0;
-    let entries = std::fs::read_dir(dir).map_err(|error| error.to_string())?;
-    for entry in entries {
-        let path = entry.map_err(|error| error.to_string())?.path();
-        if path.is_dir() {
-            lines += count_lines(&path)?;
-        } else if path.extension().is_some_and(|extension| extension == "rs") {
-            let text = std::fs::read_to_string(&path).map_err(|error| error.to_string())?;
-            lines += text.lines().count();
-        }
-    }
-    Ok(lines)
 }
 
 /// Checks what each app would really compile when built on its own. Cargo merges

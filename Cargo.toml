@@ -11,7 +11,6 @@ publish = false
 [workspace.dependencies]
 bdd = { path = "libs/bdd" }
 client = { path = "crates/client" }
-config = { path = "crates/config" }
 foundation = { path = "crates/foundation" }
 movement = { path = "crates/movement" }
 protocol = { path = "crates/protocol" }
@@ -50,10 +49,14 @@ unsafe_code = "forbid"
 too_many_arguments = "allow"
 type_complexity = "allow"
 
+# Debug info is most of a build's disk use. Line tables keep readable backtraces for
+# our code, and dependencies don't need any.
 [profile.dev]
+debug = "line-tables-only"
 opt-level = 1
 
 [profile.dev.package."*"]
+debug = false
 opt-level = 3
 
 [profile.release]

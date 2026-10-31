@@ -2,9 +2,9 @@
 //! production and a `dev_default()` for development. Secrets only ever come from
 //! environment variables, which a gitignored `.env` file can supply locally.
 
+use crate::net::{DEFAULT_SERVER_PORT, PROTOCOL_ID};
 use core::fmt;
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
-use foundation::net::{DEFAULT_SERVER_PORT, PROTOCOL_ID};
 use std::env;
 
 pub const ENVIRONMENT_VAR: &str = "DAWN_ENV";

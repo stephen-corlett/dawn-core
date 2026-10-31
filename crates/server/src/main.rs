@@ -1,6 +1,6 @@
 use bevy::log::LogPlugin;
 use clap::Parser;
-use config::EnvValues;
+use foundation::config::EnvValues;
 use server::{ServerSettings, build_app};
 use std::process::ExitCode;
 

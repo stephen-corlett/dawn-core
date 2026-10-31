@@ -38,7 +38,6 @@ The first build compiles the whole engine, so it takes a while.
 ```text
 crates/
   foundation/    Identifiers and settings used across the game
-  config/        Environment settings and secrets
   protocol/      Registers every game module's network types
   movement/      One game module, with src/client/ and src/server/ folders
   server/        Headless server: assembles plugins, owns connections

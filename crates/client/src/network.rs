@@ -2,8 +2,8 @@
 //! headlessly.
 
 use bevy::prelude::*;
-use config::{EnvValues, Environment, NetworkConfig, Secrets};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
+use foundation::config::{EnvValues, Environment, NetworkConfig, Secrets};
 use lightyear::prelude::client::{
     InputDelayConfig, InputTimelineConfig, NetcodeClient, NetcodeConfig,
 };

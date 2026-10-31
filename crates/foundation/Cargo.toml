@@ -10,5 +10,8 @@ bevy.workspace = true
 lightyear.workspace = true
 serde.workspace = true
 
+[dev-dependencies]
+bdd.workspace = true
+
 [lints]
 workspace = true

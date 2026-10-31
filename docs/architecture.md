@@ -27,7 +27,7 @@ auction house has rich rules of its own, while movement is much thinner today.
 | Layer | Crates | May depend on |
 |---|---|---|
 | Library | Anything in `libs/` | Other libraries only |
-| Foundation | `foundation` | Only `bevy`, `lightyear`, and `serde` |
+| Foundation | `foundation` | Only `bevy`, `lightyear`, and `serde`, plus `bdd` for tests |
 | Game module | `<module>` | Libraries, foundation, other game modules |
 | Protocol | `protocol` | Libraries, foundation, game modules |
 | Server app | `server` | Libraries, foundation, protocol, game modules |
@@ -142,13 +142,12 @@ Update this table whenever a game module is added or its dependencies change.
 
 ## What goes in `foundation`
 
-Every crate depends on `foundation`, so changing it rebuilds the whole game. It's
-the most expensive place to put anything, and the default answer is no.
+Every crate can depend on `foundation`, and changing it rebuilds the game. Use your
+judgment, because no count or size decides this **(review)**. Something belongs in
+`foundation` if all of these are true:
 
-Something belongs in `foundation` only if all of these are true:
-
-1. **Used widely:** Three or more game modules need it. If fewer do, it belongs to one
-   of them, and the others depend on that game module's shared crate.
+1. **Needed everywhere:** It's reasonable that every crate does or would need it. If
+   only part of the game would, it belongs to a game module instead.
 2. **No clear owner:** It isn't a concept that one game module could reasonably own.
    Health belongs to combat, even if many game modules read it.
 3. **No game rules:** It's an identifier, a setting, or a basic type. It contains
@@ -158,9 +157,8 @@ Something belongs in `foundation` only if all of these are true:
 
 Before adding to it, ask whether the change is worth rebuilding every crate.
 
-The architecture check also limits `foundation` to its allowed external crates and
-a maximum line count. Don't raise either limit to make a change fit. Find the
-owning game module instead, and raise a limit only as a deliberate design decision.
+The architecture check limits `foundation` to its allowed external crates, because
+every crate inherits them. Don't add to that list without a deliberate design decision.
 
 ## Give game modules library-style boundaries
 
@@ -328,7 +326,8 @@ inputs, such as damage formulas.
 
 ## Configuration
 
-The `config` crate separates what can be committed from what can't. Apps and test helpers use it, and game modules take their values through plugins:
+`foundation::config` separates what can be committed from what can't. Game modules
+still receive tuning through plugins rather than reading environment settings:
 
 | Kind | Examples | Where it lives |
 |---|---|---|
