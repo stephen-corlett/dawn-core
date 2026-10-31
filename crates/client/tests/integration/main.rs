@@ -27,7 +27,7 @@ fn connected_client(port: u16) -> (App, App) {
 fn client_app(port: u16) -> App {
     let mut app = build_headless_app(ClientSettings {
         server_addr: local_addr(port),
-        ..default()
+        ..ClientSettings::dev_default()
     });
     app.insert_resource(ButtonInput::<KeyCode>::default());
     prepare(app)

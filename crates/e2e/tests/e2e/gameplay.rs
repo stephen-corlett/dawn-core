@@ -14,7 +14,7 @@ use test_support::{count, local_addr, prepare, run_until};
 fn server_app(port: u16) -> App {
     prepare(build_app(ServerSettings {
         bind_addr: local_addr(port),
-        ..default()
+        ..ServerSettings::dev_default()
     }))
 }
 
@@ -22,7 +22,7 @@ fn client_app(port: u16, client_id: u64) -> App {
     let mut app = build_headless_app(ClientSettings {
         client_id,
         server_addr: local_addr(port),
-        ..default()
+        ..ClientSettings::dev_default()
     });
     app.insert_resource(ButtonInput::<KeyCode>::default());
     prepare(app)

@@ -1,5 +1,7 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
+export DAWN_ENV := "development"
+
 # List the available commands
 default:
     @just --list

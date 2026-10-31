@@ -3,8 +3,9 @@
 use crate::local_addr;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
+use config::{NetworkConfig, Secrets};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
-use foundation::net::{DEV_PRIVATE_KEY, PROTOCOL_ID, tick_duration};
+use foundation::net::tick_duration;
 use foundation::player::PlayerId;
 use lightyear::prelude::client::input::*;
 use lightyear::prelude::client::{ClientPlugins, NetcodeClient, NetcodeConfig};
@@ -27,8 +28,8 @@ impl FakeClientSettings {
         Self {
             port,
             client_id,
-            protocol_id: PROTOCOL_ID,
-            private_key: DEV_PRIVATE_KEY,
+            protocol_id: NetworkConfig::dev_default().protocol_id,
+            private_key: Secrets::dev_default().private_key,
         }
     }
 }

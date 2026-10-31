@@ -12,6 +12,6 @@ use test_support::{local_addr, prepare};
 fn server_app(port: u16) -> App {
     prepare(build_app(ServerSettings {
         bind_addr: local_addr(port),
-        ..default()
+        ..ServerSettings::dev_default()
     }))
 }

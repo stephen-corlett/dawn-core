@@ -11,6 +11,7 @@ publish = false
 [workspace.dependencies]
 bdd = { path = "libs/bdd" }
 client = { path = "crates/client" }
+config = { path = "crates/config" }
 foundation = { path = "crates/foundation" }
 movement = { path = "crates/movement" }
 protocol = { path = "crates/protocol" }
@@ -27,6 +28,7 @@ bevy = { version = "0.20", default-features = false, features = [
   "bevy_state",
 ] }
 clap = { version = "4", features = ["derive"] }
+dotenvy = "0.15"
 lightyear = { version = "0.31", default-features = false, features = [
   "std",
   "client",

@@ -38,6 +38,7 @@ The first build compiles the whole engine, so it takes a while.
 ```text
 crates/
   foundation/    Identifiers and settings used across the game
+  config/        Environment settings and secrets
   protocol/      Registers every game module's network types
   movement/      One game module, with src/client/ and src/server/ folders
   server/        Headless server: assembles plugins, owns connections
@@ -59,7 +60,9 @@ AI coding agents should start with [AGENTS.md](AGENTS.md).
 There are unit, integration, and end-to-end tests. See the testing
 levels in [docs/architecture.md](docs/architecture.md).
 
-## Security note
+## Configuration
 
-`DEV_PRIVATE_KEY` in `foundation` is a placeholder for local development. Don't
-expose a server using this key to the internet.
+`just` commands run in development with no setup. To set real values, copy
+`.env.example` to `.env`, which Git ignores. Servers default to production and refuse
+to start without a real `DAWN_PRIVATE_KEY`. See
+[docs/architecture.md](docs/architecture.md).

@@ -326,6 +326,27 @@ inputs, such as damage formulas.
 - Give every networked test its own port. Tests run at the same time.
 - Rendering isn't covered by automated tests yet.
 
+## Configuration
+
+The `config` crate separates what can be committed from what can't. Apps and test helpers use it, and game modules take their values through plugins:
+
+| Kind | Examples | Where it lives |
+|---|---|---|
+| Committed settings | Addresses, protocol version | `NetworkConfig::default()` for production, `NetworkConfig::dev_default()` for development |
+| Secrets | Signing keys, database passwords | Environment variables, supplied locally by a gitignored `.env` |
+
+- **Choosing an environment:** `DAWN_ENV` is `development` or `production`. Unset means
+  production, so a misconfigured server refuses to start. `just` commands set
+  `development`.
+- **Production secrets:** The server refuses to start without a real `DAWN_PRIVATE_KEY`,
+  and it rejects the all-zero development key.
+- **Development secrets:** `Secrets::dev_default()` is a placeholder key, so a fresh
+  checkout runs with no setup. It only exists for development and tests.
+- **Client limits:** Clients never receive the production key, because it would ship
+  to players. A production client needs a login service to issue connection tokens,
+  so it refuses to start until one exists.
+- **Adding a secret:** Add it to `Secrets` and `.env.example`, with no real value.
+
 ## Network protocol
 
 Client and server must register network types in the same order. Each game module

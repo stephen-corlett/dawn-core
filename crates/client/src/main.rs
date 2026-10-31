@@ -3,10 +3,12 @@ use clap::Parser;
 use client::movement_plugin;
 use client::network::{ClientNetworkPlugin, ClientSettings};
 use client::view::ViewPlugin;
+use config::EnvValues;
 use core::net::SocketAddr;
-use foundation::net::{DEFAULT_SERVER_ADDR, tick_duration};
+use foundation::net::tick_duration;
 use lightyear::prelude::client::ClientPlugins;
 use protocol::ProtocolPlugin;
+use std::process::ExitCode;
 
 #[derive(Parser)]
 #[command(about = "Project Dawn game client")]
@@ -15,13 +17,28 @@ struct Args {
     #[arg(long, default_value_t = 1)]
     client_id: u64,
 
-    /// Server address to connect to
-    #[arg(long, default_value_t = DEFAULT_SERVER_ADDR)]
-    server: SocketAddr,
+    /// Server address to connect to, instead of the environment's default
+    #[arg(long)]
+    server: Option<SocketAddr>,
 }
 
-fn main() {
+fn main() -> ExitCode {
     let args = Args::parse();
+    // `.env` is optional, and only development reads a key from it.
+    dotenvy::dotenv().ok();
+
+    let mut settings = match ClientSettings::load(&EnvValues::read()) {
+        Ok(settings) => settings,
+        Err(error) => {
+            eprintln!("client: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    settings.client_id = args.client_id;
+    if let Some(server) = args.server {
+        settings.server_addr = server;
+    }
+
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
@@ -35,15 +52,10 @@ fn main() {
     });
     app.add_plugins(ProtocolPlugin);
     app.add_plugins((
-        ClientNetworkPlugin {
-            settings: ClientSettings {
-                client_id: args.client_id,
-                server_addr: args.server,
-                ..default()
-            },
-        },
+        ClientNetworkPlugin { settings },
         movement_plugin(),
         ViewPlugin,
     ));
     app.run();
+    ExitCode::SUCCESS
 }

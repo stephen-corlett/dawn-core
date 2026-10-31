@@ -98,7 +98,9 @@ fn dev(clients: u64) -> TaskResult {
     let (ready_sender, ready_receiver) = channel();
     let mut server = spawn(
         "server",
-        Command::new(target_dir.join("server")).env("PATH", &path),
+        Command::new(target_dir.join("server"))
+            .env("PATH", &path)
+            .env("DAWN_ENV", "development"),
         Some(ready_sender),
     )?;
     if ready_receiver.recv_timeout(READY_TIMEOUT).is_err() {
@@ -110,7 +112,7 @@ fn dev(clients: u64) -> TaskResult {
     for id in 1..=clients {
         let label = format!("client{id}");
         let mut command = Command::new(target_dir.join("client"));
-        command.env("PATH", &path);
+        command.env("PATH", &path).env("DAWN_ENV", "development");
         command.args(["--client-id", &id.to_string()]);
         match spawn(&label, &mut command, None) {
             Ok(child) => client_processes.push(child),
