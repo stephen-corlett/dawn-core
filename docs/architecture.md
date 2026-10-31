@@ -291,9 +291,9 @@ executable lines, and it always lists uncovered lines with a suggested level:
 
 CI runs each test once, with coverage on. `Build` compiles one instrumented build,
 `Test` restores it for the coverage check, and end-to-end tests then use the same
-build. Results appear in the job summary, and uncovered lines are annotated on the
-diff. GitHub limits how many annotations it shows, so the job summary is the complete
-list.
+build. Each pull request gets one comment, updated on every push, with the result and a
+short list of missing lines. Uncovered lines are also annotated on the diff. The
+comment and annotations have limits, so the job summary is the complete list.
 
 - **Either level passes:** The suggestion is a starting point. Choose the level using
   the guidance above **(review)**.

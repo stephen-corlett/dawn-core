@@ -56,6 +56,9 @@ jobs:
     needs: build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,7 +68,23 @@ jobs:
       - uses: taiki-e/install-action@nextest
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Unit and integration tests with changed line coverage
+        env:
+          COVERAGE_COMMENT_PATH: ${{ runner.temp }}/coverage-comment.md
         run: cargo xtask coverage --base origin/${{ github.base_ref }}
       - name: End-to-end tests
         if: ${{ !cancelled() }}
         run: cargo llvm-cov nextest --no-report --workspace --filterset 'package(e2e)'
+      # Forked pull requests can't write comments, which shouldn't fail their checks.
+      - name: Comment on the pull request
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          COVERAGE_COMMENT_PATH: ${{ runner.temp }}/coverage-comment.md
+          GH_TOKEN: ${{ github.token }}
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -f "$COVERAGE_COMMENT_PATH" ]; then
+            echo "### ⚠️ Diff coverage wasn't measured" > "$COVERAGE_COMMENT_PATH"
+            echo "Tests stopped before a report was made. See the Test job." >> "$COVERAGE_COMMENT_PATH"
+          fi
+          gh pr comment "$PULL_REQUEST" --body-file "$COVERAGE_COMMENT_PATH" --edit-last --create-if-none
