@@ -1,50 +1,63 @@
 name: CI
 
+# Pushes to main only run Build, because pull requests can only restore caches saved
+# on main. Branch protection requires pull requests to be up to date, so Lint and Test
+# have already checked the merged code.
 on:
   push:
     branches: [main]
   pull_request:
 
+# A new push to a pull request replaces its running checks. Builds on main always
+# finish, so the shared cache stays fresh.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
-    name: Lint and test
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0 libwayland-dev libxkbcommon-dev
-      - name: Install Rust toolchain from rust-toolchain.toml
-        run: rustup show active-toolchain || rustup toolchain install
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@nextest
+      - uses: ./.github/actions/setup
+        with:
+          save-cache: "true"
+      # Lint reuses the check output, and Test reuses the compiled test dependencies.
+      - run: cargo check --workspace --all-targets
+      - run: cargo test --workspace --no-run
+
+  lint:
+    name: Lint
+    needs: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - run: cargo fmt --all --check
       - run: cargo xtask check-architecture
       - run: cargo xtask check-app-sides
       - run: cargo xtask check-tests
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo xtask check-isolated
-      - run: cargo nextest run --workspace
 
-  coverage:
-    name: Changed line coverage
+  test:
+    name: Test
+    needs: build
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          # Changed line coverage compares against the pull request's base branch.
           fetch-depth: 0
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0 libwayland-dev libxkbcommon-dev
-      - name: Install Rust toolchain from rust-toolchain.toml
-        run: rustup show active-toolchain || rustup toolchain install
-      - uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup
       - uses: taiki-e/install-action@nextest
       - uses: taiki-e/install-action@cargo-llvm-cov
-      - run: cargo xtask coverage --base origin/${{ github.base_ref }}
+      - run: cargo nextest run --workspace
+      - name: Changed line coverage
+        run: cargo xtask coverage --base origin/${{ github.base_ref }}
