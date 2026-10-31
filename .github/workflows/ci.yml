@@ -26,9 +26,13 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           save-cache: "true"
-      # Lint reuses the check output, and Test reuses the compiled test dependencies.
+      - uses: taiki-e/install-action@nextest
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      # Lint reuses this output.
       - run: cargo check --workspace --all-targets
-      - run: cargo test --workspace --no-run
+      # Test reuses this instrumented build. The filter compiles everything and runs
+      # nothing.
+      - run: cargo llvm-cov nextest --no-report --workspace --filterset 'none()' --no-tests=pass
 
   lint:
     name: Lint
@@ -45,6 +49,8 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo xtask check-isolated
 
+  # Every test runs once, using the same instrumented build. End-to-end tests run
+  # separately so they don't count toward changed line coverage.
   test:
     name: Test
     needs: build
@@ -58,6 +64,8 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: taiki-e/install-action@nextest
       - uses: taiki-e/install-action@cargo-llvm-cov
-      - run: cargo nextest run --workspace
-      - name: Changed line coverage
+      - name: Unit and integration tests with changed line coverage
         run: cargo xtask coverage --base origin/${{ github.base_ref }}
+      - name: End-to-end tests
+        if: ${{ !cancelled() }}
+        run: cargo llvm-cov nextest --no-report --workspace --filterset 'package(e2e)'
