@@ -1,0 +1,6 @@
+[alias]
+xtask = "run --quiet --package xtask --"
+
+# A much faster linker than the MSVC default. It ships with rustup.
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"

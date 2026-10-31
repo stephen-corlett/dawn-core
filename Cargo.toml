@@ -1,0 +1,59 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "libs/*", "xtask"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.1"
+publish = false
+
+[workspace.dependencies]
+bdd = { path = "libs/bdd" }
+client = { path = "crates/client" }
+foundation = { path = "crates/foundation" }
+movement = { path = "crates/movement" }
+protocol = { path = "crates/protocol" }
+sandbox_kit = { path = "libs/sandbox_kit" }
+server = { path = "crates/server" }
+test_support = { path = "crates/test_support" }
+
+# No default features here, so the server never pulls in rendering.
+# client turns the full engine back on for itself.
+bevy = { version = "0.20", default-features = false, features = [
+  "std",
+  "bevy_curve",
+  "bevy_log",
+  "bevy_state",
+] }
+clap = { version = "4", features = ["derive"] }
+lightyear = { version = "0.31", default-features = false, features = [
+  "std",
+  "client",
+  "server",
+  "replication",
+  "prediction",
+  "interpolation",
+  "input_native",
+  "netcode",
+  "udp",
+] }
+serde = { version = "1", features = ["derive"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+# Bevy systems routinely take many arguments and large query types.
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

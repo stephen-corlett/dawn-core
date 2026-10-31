@@ -1,0 +1,16 @@
+[package]
+name = "protocol"
+description = "The registrations and tuning values that the client and server share"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+foundation.workspace = true
+movement.workspace = true
+lightyear.workspace = true
+
+[lints]
+workspace = true

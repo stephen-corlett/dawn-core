@@ -1,0 +1,18 @@
+[package]
+name = "xtask"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# Don't add game crates here: tooling must keep working when the game doesn't compile.
+[dependencies]
+clap.workspace = true
+ctrlc = "3"
+serde_json = "1"
+
+[dev-dependencies]
+bdd.workspace = true
+
+[lints]
+workspace = true

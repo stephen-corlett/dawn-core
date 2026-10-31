@@ -1,0 +1,25 @@
+[package]
+name = "server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+bevy.workspace = true
+clap.workspace = true
+foundation.workspace = true
+movement = { workspace = true, features = ["server"] }
+protocol.workspace = true
+lightyear.workspace = true
+
+[dev-dependencies]
+bdd.workspace = true
+test_support.workspace = true
+
+[lints]
+workspace = true
+
+[[test]]
+name = "integration"
+path = "tests/integration/main.rs"
