@@ -29,6 +29,17 @@ where code belongs.
 
 Follow [CONTRIBUTING.md](CONTRIBUTING.md), including its Conventional Commits format.
 
+## Pull requests
+
+`main` only accepts pull requests. Work on a branch, and open each pull request from
+a filled-in copy of the template, because `gh` skips it when `--body` or `--fill` is
+used:
+
+1. Copy `.github/pull_request_template.md` to a temporary file outside the repository.
+2. Complete every section and remove the HTML comments.
+3. Only tick a Testing box if you ran that command and it passed.
+4. Run `gh pr create --title "<conventional title>" --body-file <temporary file>`.
+
 ## Commands
 
 | Command | Use |

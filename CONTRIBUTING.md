@@ -80,7 +80,9 @@ test(client): cover rollback after a server correction
 
 ## Pull requests
 
+- `main` only accepts pull requests, so work on a branch.
 - Use a Conventional Commits title, since it describes the whole change.
-- Explain what changed, why, and how you tested it.
-- Include anything reviewers should check by hand, such as rendering or game feel.
+- Fill in every section of the
+  [pull request template](.github/pull_request_template.md). The GitHub website loads
+  it automatically, but `gh pr create` skips it with `--body` or `--fill`.
 - Keep each pull request focused. Separate unrelated changes.
