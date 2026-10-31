@@ -350,8 +350,8 @@ fn workspace_crates() -> Result<Vec<CrateInfo>, String> {
     Ok(crates)
 }
 
-/// Merges raw unit and integration coverage, then compares it with the Git diff.
-/// End-to-end tests stay out, so they can't hide a missing lower-level test.
+/// Runs every test except end-to-end with coverage, then compares it with the Git
+/// diff. End-to-end tests stay out, so they can't hide a missing lower-level test.
 fn check_coverage(base: Option<String>) -> TaskResult {
     let base = comparison_base(base)?;
 
@@ -361,16 +361,8 @@ fn check_coverage(base: Option<String>) -> TaskResult {
         "nextest",
         "--no-report",
         "--workspace",
-        "--lib",
-        "--bins",
-    ])?;
-    cargo(&[
-        "llvm-cov",
-        "nextest",
-        "--no-report",
-        "--workspace",
-        "--test",
-        "integration",
+        "--filterset",
+        "not package(e2e)",
     ])?;
     let report_path = workspace_root().join("target").join("coverage.lcov");
     let report_argument = report_path.to_string_lossy();
@@ -447,7 +439,11 @@ fn comparison_base(base: Option<String>) -> Result<String, String> {
     }
     match base {
         Some(base) => Ok(base),
-        None => Ok(git(&["merge-base", "main", "HEAD"])?.trim().to_owned()),
+        // Local main can fall behind, so prefer the copy from GitHub.
+        None => Ok(git(&["merge-base", "origin/main", "HEAD"])
+            .or_else(|_| git(&["merge-base", "main", "HEAD"]))?
+            .trim()
+            .to_owned()),
     }
 }
 
