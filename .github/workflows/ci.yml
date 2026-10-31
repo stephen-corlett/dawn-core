@@ -1,5 +1,8 @@
 name: CI
 
+# Pushes to main only run Build, because pull requests can only restore caches saved
+# on main. Branch protection requires pull requests to be up to date, so Lint and Test
+# have already checked the merged code.
 on:
   push:
     branches: [main]
@@ -24,6 +27,7 @@ jobs:
   lint:
     name: Lint
     needs: build
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +42,7 @@ jobs:
   test:
     name: Test
     needs: build
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,5 +54,4 @@ jobs:
       - uses: taiki-e/install-action@cargo-llvm-cov
       - run: cargo nextest run --workspace
       - name: Changed line coverage
-        if: github.event_name == 'pull_request'
         run: cargo xtask coverage --base origin/${{ github.base_ref }}
