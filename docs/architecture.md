@@ -280,19 +280,20 @@ without an explicit design decision **(review)**.
 
 ### Test coverage
 
-`just coverage` runs unit and integration tests, merges their raw coverage data with
-`cargo-llvm-cov`, and compares it with the Git diff. It fails if tests executed less
-than 90% of the changed executable lines, and it always lists uncovered lines with a
-suggested level:
+`just coverage` runs every test except end-to-end with `cargo-llvm-cov`, and compares
+the result with the Git diff. It fails if tests executed less than 90% of the changed
+executable lines, and it always lists uncovered lines with a suggested level:
 
 ```text
   crates/movement/src/rules.rs:21   suggested: unit
   crates/server/src/network.rs:48   suggested: integration
 ```
 
-The pull request job runs the same check, then adds the results to the job summary
-and annotates uncovered lines on the diff. GitHub limits how many annotations it
-shows, so the job summary is the complete list.
+CI runs each test once, with coverage on. `Build` compiles one instrumented build,
+`Test` restores it for the coverage check, and end-to-end tests then use the same
+build. Results appear in the job summary, and uncovered lines are annotated on the
+diff. GitHub limits how many annotations it shows, so the job summary is the complete
+list.
 
 - **Either level passes:** The suggestion is a starting point. Choose the level using
   the guidance above **(review)**.
@@ -302,7 +303,7 @@ shows, so the job summary is the complete list.
 - **End-to-end tests don't count:** They run separately, so they can't hide a missing
   unit or integration test.
 - **What's compared:** By default, your working tree against where the branch left
-  `main`, including uncommitted and new files. Use `just coverage --base <ref>` to
+  `origin/main`, including uncommitted and new files. Use `just coverage --base <ref>` to
   compare with something else. A repository needs a first commit for this to work.
 - **Excluded code:** `EXCLUDED_PATHS` in `xtask/src/coverage.rs` lists code tests can't
   reach, such as rendering and program entry points. Don't add to it to get a change
