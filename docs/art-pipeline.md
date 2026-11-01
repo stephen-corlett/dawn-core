@@ -200,7 +200,7 @@ imported_assets/   What the game reads. Generated, not committed.
 | Mipmaps | Required on all 3D textures, once the cook step exists |
 | Texture values | Neutral, so that lighting carries the mood |
 | Frame rate | At least 200 frames per second in the real game, at 720p on the development machine |
-| Shadows | Two layers at 2048 pixels, reaching 45 meters. Resolution is what costs the most. |
+| Shadows | Two layers at 2048 pixels, reaching as far as the fog, so that nobody sees them appear. Resolution costs the most, and distance costs almost nothing. |
 
 Measure frame rate on a window on the main monitor, because a window on the 59 Hz second monitor
 is capped at 60. Trees cost far more than anything else, so check the frame rate after adding any.
