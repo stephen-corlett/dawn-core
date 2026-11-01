@@ -214,17 +214,32 @@ the spec is at fault, not the asset.
 |---|---|---|
 | Skills, template, and this document | Done | Everything |
 | Art bible, `docs/art/bible.md` | Not written | Gates 1, 3, and 6 |
-| Look development scene | Not built, only a temporary tool on the local `wip/forest-bakes` branch | Gates 2 and 5 |
+| Look development scene, `just lookdev` | Done | Gates 2 and 5 |
 | Cook step and automated rules | Not built | Gate 4 |
 
 Until these exist, `art-integration` stops at the first gate that needs them and says what's
 missing. Build them in this order:
 
 1. Decide the look, with the art director: how painted, how detailed, and how dark.
-2. Turn the temporary inventory tool into a look development scene.
-3. Test Bevy's asset processor with one texture, and prove with a pixel comparison that its
+2. Test Bevy's asset processor with one texture, and prove with a pixel comparison that its
    mipmaps reach the screen. The mipmaps built at load in `wip/forest-bakes` never did.
-4. Review `wip/forest-bakes` against the bible, and redo only what fits as a pipeline recipe.
+3. Review `wip/forest-bakes` against the bible, and redo only what fits as a pipeline recipe.
+
+## Look development scene
+
+`just lookdev` shows the hero assets under the game's real mood. The arrow keys change the
+model, 1 to 3 change the distance, and Tab swaps sun and shadow. The window's title names the
+view.
+
+`just lookdev --capture <folder>` saves every view at 1, 5, and 20 meters, in sun and in shadow,
+and then exits. Keep the folder outside the repository. Name models after the options to show
+those instead, such as `just lookdev --capture ../shots nature/Fern_1.gltf`.
+
+- **Distances are real.** They're measured from the surface the camera faces.
+- **Captures repeat exactly.** Two runs of the same view match pixel for pixel, so any difference
+  between a before and an after comes from the change.
+- **It doesn't show everything.** Characters stand in their rest pose, nothing moves, and the
+  ground is bare and flat. Shimmer and how art sits in the forest still need the real game.
 
 ## Known problems
 

@@ -49,6 +49,7 @@ used:
 |---|---|
 | `just dev` | Run the server and two clients |
 | `just sandbox <name>` | Run one game module's sandbox |
+| `just lookdev` | Show art under the game's real lighting, or capture it with `--capture <folder>` |
 | `just check` | Run formatting, architecture, lint, and isolated-build checks |
 | `just test` | Run every test |
 | `just coverage` | Fail if tests cover under 90% of changed lines, and list the gaps |

@@ -45,9 +45,9 @@ Reference is for discussion, and it never ships.
 ## 4. Prove it in the engine
 
 1. Agree three hero assets: normally the character, one tree, and one rock.
-2. Use the look development scene. If it doesn't exist, build it first, with fixed lighting and
-   views at 1, 5, and 20 meters. Use the game's real mood from `crates/client/src/look.rs`, not
-   the world sandbox's own values.
+2. Show them with `just lookdev`, which uses the game's real mood from
+   `crates/client/src/look.rs`. Save each round with `--capture`, to a folder outside the
+   repository, so that rounds can be compared.
 3. Change shaders, lighting, and materials together until the heroes match the answers above.
 4. Show the art director each round's images, and record what they say.
 

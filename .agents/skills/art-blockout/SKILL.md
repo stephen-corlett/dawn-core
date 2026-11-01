@@ -18,8 +18,9 @@ This is the cheapest place to catch a mistake, so keep it rough.
 1. Build the placeholder from primitive shapes, or from an existing model at the right size. It
    shouldn't have final art or detail.
 2. Place it where the brief says, using the owning game module's normal configuration.
-3. Render it from a player's view, beside the character and nearby props for scale. Use the look
-   development scene if it exists, and the real game either way.
+3. Render it from a player's view in the real game, beside the character and nearby props for
+   scale. Use `just lookdev --capture <folder> character <model>` too, with a folder outside the
+   repository, if the placeholder is a model.
 4. Save the images outside the repository, and add a gate log entry with their paths.
 
 Note in your entry whether the placeholder should stay in the working tree for the next gates.

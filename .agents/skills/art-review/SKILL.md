@@ -14,12 +14,11 @@ the brief's gate log.
 Read [docs/art-pipeline.md](../../../docs/art-pipeline.md), especially "Rules for every job" and
 "Definition of done", then the brief and `docs/art/bible.md`.
 
-If the look development scene doesn't exist, report **Blocked**.
-
 ## Steps
 
-1. **Capture a before and after.** Use the same views, lighting, and window size, at 1, 5, and 20
-   meters, in sun and in shadow. Capture the real game too.
+1. **Capture a before and after.** Run `just lookdev --capture <folder> <models>` on each version,
+   with folders outside the repository. It saves the same views every time, at 1, 5, and 20
+   meters, in sun and in shadow. Capture the real game too, because the scene is bare and still.
 2. **Check the capture.** View the images before reading any numbers. Confirm that the views
    differ from each other, the world and character loaded, and the frame rate is believable. If
    not, the capture is broken, so fix that and start again.
@@ -42,6 +41,6 @@ If the look development scene doesn't exist, report **Blocked**.
 - **Passed:** Every check is met, and you've named anything unverified.
 - **Failed:** List each problem with its cause and image.
 - **Needs decision:** It meets the spec but a person should judge something, or a target was missed.
-- **Blocked:** The scene needed for the review doesn't exist.
+- **Blocked:** A game is already running, or something the review needs doesn't work.
 
 Passing here doesn't finish the asset. A person signs off at gate 6.

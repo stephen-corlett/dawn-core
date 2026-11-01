@@ -22,6 +22,10 @@ client id="1":
 sandbox name:
     cargo run -p {{name}} --example sandbox --all-features --features sandbox_kit/dev
 
+# Show art under the game's real mood, for example: just lookdev --capture ../shots
+lookdev *args:
+    cargo run -p client --example lookdev -- {{args}}
+
 # Run every test in crates and libs
 test:
     cargo nextest run --workspace --exclude xtask
