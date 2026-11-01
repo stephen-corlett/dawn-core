@@ -60,7 +60,7 @@ fn next_dodge(
     if input.dodge && on_ground && !dodge.is_committed() && direction != Vec2::ZERO {
         return Dodge {
             direction,
-            remaining_secs: config.dodge_secs,
+            remaining_secs: config.dodge_lunge_secs + config.dodge_rollout_secs,
             recovery_secs: 0.0,
         };
     }
@@ -86,8 +86,10 @@ fn travel_to(
     config: &MovementConfig,
     surface: &dyn WalkSurface,
 ) -> Vec2 {
-    let velocity = if dodge.is_rolling() {
-        dodge.direction * config.dodge_speed
+    let velocity = if dodge.is_rolling_out(config) {
+        dodge.direction * config.dodge_rollout_speed
+    } else if dodge.is_rolling() {
+        dodge.direction * config.dodge_lunge_speed
     } else if dodge.is_recovering() {
         steering(input) * gait_speed(input.gait, config).min(config.dodge_recovery_speed)
     } else {
@@ -136,8 +138,10 @@ mod tests {
         sneak_speed: 2.0,
         run_speed: 10.0,
         sprint_speed: 16.0,
-        dodge_speed: 12.0,
-        dodge_secs: 0.5,
+        dodge_lunge_speed: 12.0,
+        dodge_lunge_secs: 0.3,
+        dodge_rollout_speed: 3.0,
+        dodge_rollout_secs: 0.2,
         dodge_recovery_secs: 0.3,
         dodge_recovery_speed: 1.0,
         jump_speed: 8.0,
@@ -466,8 +470,8 @@ mod tests {
                     assert!(moved.dodge.is_rolling());
                 });
 
-                test("they move at rolling speed", || {
-                    assert_eq!(moved.position.x, CONFIG.dodge_speed * DELTA);
+                test("they lunge at full speed", || {
+                    assert_eq!(moved.position.x, CONFIG.dodge_lunge_speed * DELTA);
                 });
             });
         });
@@ -582,6 +586,40 @@ mod tests {
                 test("the roll doesn't restart", || {
                     assert_eq!(moved.dodge.direction, Vec2::X);
                     assert!(moved.dodge.remaining_secs < rolling.dodge.remaining_secs);
+                });
+            });
+        });
+
+        given("a roll that has run through its lunge", || {
+            let press = MoveInput {
+                right: true,
+                dodge: true,
+                ..default()
+            };
+            let mut body = step(standing_at(Vec3::ZERO), &press);
+            while !body.dodge.is_rolling_out(&CONFIG) {
+                body = step(body, &MoveInput::default());
+            }
+
+            when("the roll carries on", || {
+                let start = body.position.x;
+                let moved = step(body, &MoveInput::default());
+
+                test("the distance covered drops", || {
+                    let moved_by = moved.position.x - start;
+                    assert!((moved_by - CONFIG.dodge_rollout_speed * DELTA).abs() < 0.0001);
+                });
+            });
+
+            when("the player tries to steer", || {
+                let steered = MoveInput {
+                    forward: true,
+                    ..default()
+                };
+                let moved = step(body, &steered);
+
+                test("they're still committed to the roll", || {
+                    assert_eq!(moved.position.z, 0.0);
                 });
             });
         });
@@ -702,7 +740,8 @@ mod tests {
                     || {
                         let lasted = rolling_steps as f32 * DELTA;
                         assert!(
-                            (lasted - CONFIG.dodge_secs).abs() <= DELTA * 1.01,
+                            (lasted - CONFIG.dodge_lunge_secs - CONFIG.dodge_rollout_secs).abs()
+                                <= DELTA * 1.01,
                             "lasted {lasted}"
                         );
                     },

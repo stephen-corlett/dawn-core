@@ -26,9 +26,11 @@ pub fn movement_config() -> MovementConfig {
         sneak_speed: 1.5,
         run_speed: 5.4,
         sprint_speed: 8.2,
-        dodge_speed: 10.0,
-        dodge_secs: 0.55,
-        dodge_recovery_secs: 0.6,
+        dodge_lunge_speed: 9.0,
+        dodge_lunge_secs: 0.4,
+        dodge_rollout_speed: 2.2,
+        dodge_rollout_secs: 0.6,
+        dodge_recovery_secs: 0.25,
         dodge_recovery_speed: 1.5,
         jump_speed: 7.0,
         gravity: 18.0,
@@ -49,10 +51,18 @@ mod tests {
             let config = movement_config();
 
             when("a roll is compared with running away", || {
-                let (roll, sprint) = (config.dodge_speed, config.sprint_speed);
+                let (lunge, sprint) = (config.dodge_lunge_speed, config.sprint_speed);
 
-                test("a roll outruns a sprint", || {
-                    assert!(roll > sprint);
+                test("a lunge outruns a sprint", || {
+                    assert!(lunge > sprint);
+                });
+            });
+
+            when("the two halves of a roll are compared", || {
+                let (lunge, rollout) = (config.dodge_lunge_speed, config.dodge_rollout_speed);
+
+                test("the roll-out covers far less ground", || {
+                    assert!(rollout < lunge / 2.0);
                 });
             });
 

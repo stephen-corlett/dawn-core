@@ -39,8 +39,11 @@ pub struct AnimationConfig {
     pub sprint_clip_speed: f32,
     /// Plays the jump start and landing clips this much faster than normal.
     pub jump_rate: f32,
-    /// Plays the roll clip this much faster than normal, to fit a dodge's length.
-    pub roll_rate: f32,
+    /// How fast the roll clip plays during a dodge's lunge. It should reach the frame
+    /// where the body lands on its back just as the lunge ends.
+    pub lunge_rate: f32,
+    /// How fast the roll clip plays during the roll-out, to finish as that finishes.
+    pub rollout_rate: f32,
     /// How long one pose takes to blend into the next.
     pub fade_secs: f32,
     /// A body moving slower than this stands idle.
@@ -200,7 +203,7 @@ fn drive_rigs(
             rig.pose = Some(next);
         }
         if let Some(active) = player.animation_mut(clips.nodes.of(next)) {
-            active.set_speed(playback_rate(next, stride.speed, &config));
+            active.set_speed(playback_rate(next, stride, &config));
         }
     }
 }
@@ -248,14 +251,15 @@ fn gait_pose(stride: &Stride, config: &AnimationConfig, movement: &MovementConfi
     }
 }
 
-fn playback_rate(pose: Pose, speed: f32, config: &AnimationConfig) -> f32 {
-    let matched = |clip_speed: f32| (speed / clip_speed).clamp(SLOWEST_RATE, FASTEST_RATE);
+fn playback_rate(pose: Pose, stride: &Stride, config: &AnimationConfig) -> f32 {
+    let matched = |clip_speed: f32| (stride.speed / clip_speed).clamp(SLOWEST_RATE, FASTEST_RATE);
     match pose {
         Pose::Sneak => matched(config.sneak_clip_speed),
         Pose::Recover => matched(config.recover_clip_speed),
         Pose::Run => matched(config.run_clip_speed),
         Pose::Sprint => matched(config.sprint_clip_speed),
-        Pose::Roll => config.roll_rate,
+        Pose::Roll if stride.rolling_out => config.rollout_rate,
+        Pose::Roll => config.lunge_rate,
         Pose::JumpStart | Pose::Landing => config.jump_rate,
         Pose::Idle | Pose::SneakIdle | Pose::Falling => 1.0,
     }
@@ -270,8 +274,10 @@ mod tests {
         sneak_speed: 2.0,
         run_speed: 6.0,
         sprint_speed: 10.0,
-        dodge_speed: 7.0,
-        dodge_secs: 0.7,
+        dodge_lunge_speed: 7.0,
+        dodge_lunge_secs: 0.4,
+        dodge_rollout_speed: 2.0,
+        dodge_rollout_secs: 0.3,
         dodge_recovery_secs: 0.6,
         dodge_recovery_speed: 1.5,
         jump_speed: 7.0,
@@ -285,6 +291,7 @@ mod tests {
         speed: 0.0,
         airborne: true,
         rolling: false,
+        rolling_out: false,
         recovering: false,
         sneaking: false,
     };
@@ -309,7 +316,8 @@ mod tests {
             run_clip_speed: 6.0,
             sprint_clip_speed: 8.0,
             jump_rate: 2.0,
-            roll_rate: 2.5,
+            lunge_rate: 2.5,
+            rollout_rate: 1.5,
             fade_secs: 0.1,
             moving_speed: 0.3,
         }
@@ -317,6 +325,10 @@ mod tests {
 
     fn on_ground(speed: f32) -> Stride {
         Stride { speed, ..default() }
+    }
+
+    fn rate(pose: Pose, speed: f32) -> f32 {
+        playback_rate(pose, &on_ground(speed), &config())
     }
 
     fn recovering(speed: f32) -> Stride {
@@ -339,6 +351,7 @@ mod tests {
         speed: 7.0,
         airborne: false,
         rolling: true,
+        rolling_out: false,
         recovering: false,
         sneaking: false,
     };
@@ -621,7 +634,7 @@ mod tests {
             let config = config();
 
             when("a body runs at that speed", || {
-                let rate = playback_rate(Pose::Run, 6.0, &config);
+                let rate = rate(Pose::Run, 6.0);
 
                 test("the clip plays at normal speed", || {
                     assert_eq!(rate, 1.0);
@@ -629,7 +642,7 @@ mod tests {
             });
 
             when("a body runs at half that speed", || {
-                let rate = playback_rate(Pose::Run, 3.0, &config);
+                let rate = rate(Pose::Run, 3.0);
 
                 test("the clip slows down to match", || {
                     assert_eq!(rate, 0.5);
@@ -637,7 +650,7 @@ mod tests {
             });
 
             when("a body runs far too fast", || {
-                let rate = playback_rate(Pose::Run, 60.0, &config);
+                let rate = rate(Pose::Run, 60.0);
 
                 test("the clip stops speeding up", || {
                     assert_eq!(rate, FASTEST_RATE);
@@ -645,8 +658,8 @@ mod tests {
             });
 
             when("a sneaking or sprinting body is measured", || {
-                let sneaking = playback_rate(Pose::Sneak, 1.5, &config);
-                let sprinting = playback_rate(Pose::Sprint, 8.0, &config);
+                let sneaking = rate(Pose::Sneak, 1.5);
+                let sprinting = rate(Pose::Sprint, 8.0);
 
                 test("each uses its own clip's speed", || {
                     assert_eq!(sneaking, 1.5);
@@ -655,23 +668,35 @@ mod tests {
             });
 
             when("a recovering body is measured", || {
-                let rate = playback_rate(Pose::Recover, 1.5, &config);
+                let rate = rate(Pose::Recover, 1.5);
 
                 test("it uses its own clip's speed", || {
                     assert_eq!(rate, 1.5);
                 });
             });
 
-            when("a roll is played", || {
-                let rate = playback_rate(Pose::Roll, 7.0, &config);
+            when("a roll is in its lunge", || {
+                let rate = playback_rate(Pose::Roll, &ROLLING, &config);
 
-                test("it uses the roll rate", || {
-                    assert_eq!(rate, config.roll_rate);
+                test("it uses the lunge rate", || {
+                    assert_eq!(rate, config.lunge_rate);
+                });
+            });
+
+            when("a roll is rolling out", || {
+                let stride = Stride {
+                    rolling_out: true,
+                    ..ROLLING
+                };
+                let rate = playback_rate(Pose::Roll, &stride, &config);
+
+                test("the animation slows down", || {
+                    assert_eq!(rate, config.rollout_rate);
                 });
             });
 
             when("a jump is played", || {
-                let rate = playback_rate(Pose::JumpStart, 0.0, &config);
+                let rate = rate(Pose::JumpStart, 0.0);
 
                 test("it uses the jump rate", || {
                     assert_eq!(rate, config.jump_rate);
@@ -679,7 +704,7 @@ mod tests {
             });
 
             when("a body stands idle", || {
-                let rate = playback_rate(Pose::Idle, 0.0, &config);
+                let rate = rate(Pose::Idle, 0.0);
 
                 test("the clip plays at normal speed", || {
                     assert_eq!(rate, 1.0);

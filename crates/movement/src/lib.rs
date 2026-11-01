@@ -30,10 +30,14 @@ pub struct MovementConfig {
     pub sneak_speed: f32,
     pub run_speed: f32,
     pub sprint_speed: f32,
-    /// Speed during a dodge roll, in world units per second.
-    pub dodge_speed: f32,
-    /// How long a dodge roll lasts.
-    pub dodge_secs: f32,
+    /// Speed during the lunge that opens a dodge roll, in world units per second.
+    pub dodge_lunge_speed: f32,
+    /// How long the lunge lasts.
+    pub dodge_lunge_secs: f32,
+    /// Speed once the player hits the ground and rolls out, in world units per second.
+    pub dodge_rollout_speed: f32,
+    /// How long the roll-out lasts.
+    pub dodge_rollout_secs: f32,
     /// How long a player stays exposed after a dodge roll. They can't jump or roll again
     /// until it's over.
     pub dodge_recovery_secs: f32,
@@ -61,9 +65,9 @@ pub struct PlayerPosition(pub Vec3);
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
 pub struct VerticalSpeed(pub f32);
 
-/// An entity's dodge roll. The roll overrides the player's steering, and recovery slows
-/// them down afterward, so committing to a roll carries a risk. Anything that rewards a
-/// well-timed roll can end recovery early by clearing `recovery_secs`.
+/// An entity's dodge roll: a fast lunge, a slow roll-out, and then a slowed recovery. The
+/// player can't steer until recovery, so committing to a roll carries a risk. Anything
+/// that rewards a well-timed roll can end recovery early by clearing `recovery_secs`.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
 pub struct Dodge {
     /// Where the roll is heading on the XZ plane.
@@ -81,6 +85,11 @@ impl Dodge {
 
     pub fn is_recovering(&self) -> bool {
         self.recovery_secs > 0.0
+    }
+
+    /// Whether a roll has hit the ground and is carrying on at its slower speed.
+    pub fn is_rolling_out(&self, config: &MovementConfig) -> bool {
+        self.is_rolling() && self.remaining_secs <= config.dodge_rollout_secs
     }
 
     /// Whether the player is tied up in a roll or the recovery from one.
