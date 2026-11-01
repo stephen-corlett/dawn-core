@@ -1,9 +1,10 @@
 //! Runs one character with the real movement rules, with no server or network. Move
-//! with WASD, sprint with Shift, roll with Control, hold C to sneak, jump with Space, and hold the right
-//! mouse button to look around. Run it with `just sandbox avatar`.
+//! with WASD, sprint with Shift, roll with Control, hold C to sneak, jump with Space, and
+//! hold the right mouse button to look around. Run it with `just sandbox avatar`.
 
 use avatar::client::{
-    AnimationConfig, AppearanceConfig, AvatarClientPlugin, CameraConfig, ClipIndices, MotionConfig,
+    AnimationConfig, AppearanceConfig, AvatarClientPlugin, CameraConfig, ClipIndices, GaitClip,
+    MotionConfig,
 };
 use bevy::prelude::*;
 use core::f32::consts::PI;
@@ -62,18 +63,36 @@ fn main() {
                     idle: 9,
                     sneak_idle: 2,
                     sneak: 1,
+                    walk: 42,
                     run: 13,
                     sprint: 36,
                     roll: 27,
-                    recover: 42,
                     jump_start: 16,
                     falling: 15,
                     landing: 14,
                 },
-                sneak_clip_speed: 0.75,
-                recover_clip_speed: 0.97,
-                run_clip_speed: 5.36,
-                sprint_clip_speed: 8.25,
+                sneak_clip: GaitClip {
+                    speed: 0.75,
+                    slowest_rate: 0.5,
+                    fastest_rate: 2.0,
+                },
+                walk_clip: GaitClip {
+                    speed: 0.97,
+                    slowest_rate: 0.5,
+                    fastest_rate: 2.0,
+                },
+                run_clip: GaitClip {
+                    speed: 5.36,
+                    slowest_rate: 0.5,
+                    fastest_rate: 1.2,
+                },
+                sprint_clip: GaitClip {
+                    speed: 8.25,
+                    slowest_rate: 0.8,
+                    fastest_rate: 1.25,
+                },
+                walk_below: 0.5,
+                sprint_above: 1.1,
                 jump_rate: 2.0,
                 lunge_rate: 1.62,
                 rollout_rate: 1.03,

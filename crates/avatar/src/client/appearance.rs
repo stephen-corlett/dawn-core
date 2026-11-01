@@ -134,12 +134,18 @@ fn connect_node(
 #[cfg(test)]
 mod tests {
     use super::super::animation::AnimationPlugin;
-    use super::super::{AnimationConfig, ClipIndices};
+    use super::super::{AnimationConfig, ClipIndices, GaitClip};
     use super::*;
     use bdd::spec;
     use bevy::ecs::system::RunSystemOnce;
     use core::f32::consts::PI;
     use movement::MovementConfig;
+
+    const GAIT_CLIP: GaitClip = GaitClip {
+        speed: 1.0,
+        slowest_rate: 0.5,
+        fastest_rate: 2.0,
+    };
 
     fn appearance_app() -> App {
         let mut app = App::new();
@@ -170,18 +176,20 @@ mod tests {
                     idle: 0,
                     sneak_idle: 7,
                     sneak: 1,
+                    walk: 9,
                     run: 2,
                     sprint: 3,
                     roll: 8,
-                    recover: 9,
                     jump_start: 4,
                     falling: 5,
                     landing: 6,
                 },
-                sneak_clip_speed: 1.0,
-                recover_clip_speed: 1.0,
-                run_clip_speed: 6.0,
-                sprint_clip_speed: 8.0,
+                sneak_clip: GAIT_CLIP,
+                walk_clip: GAIT_CLIP,
+                run_clip: GAIT_CLIP,
+                sprint_clip: GAIT_CLIP,
+                walk_below: 0.5,
+                sprint_above: 1.1,
                 jump_rate: 2.0,
                 lunge_rate: 2.5,
                 rollout_rate: 1.5,
