@@ -3,3 +3,5 @@
 .env
 .vscode/settings.json
 .idea/
+/docs/plans/
+/tools/art-bake/target

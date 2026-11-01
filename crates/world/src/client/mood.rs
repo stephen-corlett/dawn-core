@@ -3,7 +3,10 @@
 use bevy::anti_alias::smaa::Smaa;
 use bevy::camera::{Exposure, Hdr};
 use bevy::light::atmosphere::ScatteringMedium;
-use bevy::light::{Atmosphere, AtmosphereEnvironmentMapLight, CascadeShadowConfigBuilder, SunDisk};
+use bevy::light::{
+    Atmosphere, AtmosphereEnvironmentMapLight, CascadeShadowConfigBuilder,
+    DirectionalLightShadowMap, SunDisk,
+};
 use bevy::pbr::{AtmosphereSettings, ScreenSpaceAmbientOcclusion};
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
@@ -33,6 +36,11 @@ pub struct Mood {
     pub fog_end: f32,
     /// How far shadows reach from the camera.
     pub shadow_distance: f32,
+    /// How many layers of shadow cover that distance. Each one draws everything nearby again,
+    /// so this is the biggest cost in the forest.
+    pub shadow_cascades: usize,
+    /// The width of each layer's shadow map in pixels, which must be a power of two.
+    pub shadow_resolution: usize,
     /// How colorful the image is, where 1 leaves it unchanged.
     pub saturation: f32,
     /// How much bright areas glow.
@@ -48,6 +56,9 @@ impl Plugin for MoodPlugin {
         app.insert_resource(self.mood);
         // The sky lights the world now, so flat ambient light would only wash it out.
         app.insert_resource(GlobalAmbientLight::NONE);
+        app.insert_resource(DirectionalLightShadowMap {
+            size: self.mood.shadow_resolution,
+        });
         app.add_systems(Startup, (spawn_sky, spawn_sun));
         app.add_observer(grade_camera);
     }
@@ -69,6 +80,7 @@ fn spawn_sun(mut commands: Commands, mood: Res<Mood>) {
         Transform::from_translation(mood.sun_position).looking_at(Vec3::ZERO, Vec3::Y),
         SunDisk::EARTH,
         CascadeShadowConfigBuilder {
+            num_cascades: mood.shadow_cascades,
             first_cascade_far_bound: NEAREST_SHADOW_CASCADE,
             maximum_distance: mood.shadow_distance,
             ..default()
@@ -129,6 +141,8 @@ mod tests {
         fog_start: 10.0,
         fog_end: 80.0,
         shadow_distance: 60.0,
+        shadow_cascades: 2,
+        shadow_resolution: 1024,
         saturation: 0.8,
         glow: 0.1,
     };
@@ -160,6 +174,14 @@ mod tests {
                     let forward = transform.forward().as_vec3();
                     let toward_origin = -MOOD.sun_position.normalize();
                     assert!(forward.distance(toward_origin) < 0.001);
+                });
+
+                test("shadows use the mood's quality", || {
+                    let mut layers = app.world_mut().query::<&bevy::light::CascadeShadowConfig>();
+                    let layers = layers.single(app.world()).expect("there is one sun");
+                    assert_eq!(layers.bounds.len(), MOOD.shadow_cascades);
+                    let map = app.world().resource::<DirectionalLightShadowMap>();
+                    assert_eq!(map.size, MOOD.shadow_resolution);
                 });
 
                 test("the world has one atmosphere", || {

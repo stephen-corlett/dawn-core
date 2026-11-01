@@ -1,0 +1,36 @@
+{
+  "model": "sd_xl_base_1.0.safetensors",
+  "negative": "photo, photograph, photorealistic, realistic, 3d render, noise, grain, blurry, text, watermark, signature, logo, perspective, horizon, sky, cast shadow, vignette, frame, border, outlines, black lines, ink, cartoon, comic, vector art, sticker, cel shading, mobile game, flowers, trees, mushrooms, logs, objects, icons, repeating pattern of shapes",
+  "textures": {
+    "ground": {
+      "seed": 63,
+      "steps": 32,
+      "cfg": 6.0,
+      "prompt": "digital painting of short grass on forest ground seen from directly above, hundreds of tiny visible brush dabs and small painted grass strokes evenly scattered, small flecks of warm earth and fallen leaves, muted natural greens, no large shapes, even diffuse light, painterly texture for a 2004 fantasy mmorpg, uniform surface"
+    },
+    "stone": {
+      "seed": 51,
+      "steps": 32,
+      "cfg": 5.5,
+      "prompt": "digital painting of a weathered cool blue-grey rock surface filling the frame, soft blended brushwork, large simple planes, subtle cracks, slate grey, gentle painted highlights, even diffuse light, painterly texture for a 2004 fantasy mmorpg, uniform surface"
+    },
+    "bark_warm": {
+      "seed": 52,
+      "steps": 32,
+      "cfg": 5.5,
+      "prompt": "digital painting of tree bark filling the frame, long vertical ridges and grooves, soft blended brushwork, simple clear shapes, warm brown tones, gentle painted highlights, even diffuse light, painterly texture for a 2004 fantasy mmorpg, uniform surface"
+    },
+    "bark_twisted": {
+      "seed": 51,
+      "steps": 32,
+      "cfg": 5.5,
+      "prompt": "digital painting of tree bark filling the frame, long vertical ridges and grooves, soft blended brushwork, simple clear shapes, warm brown tones, gentle painted highlights, even diffuse light, painterly texture for a 2004 fantasy mmorpg, uniform surface"
+    },
+    "foliage": {
+      "seed": 53,
+      "steps": 32,
+      "cfg": 5.5,
+      "prompt": "digital painting of dense leaves filling the frame, soft dabs of brushwork, simple clustered leaf shapes, light and dark tones of a single green, gentle painted highlights, even diffuse light, painterly texture for a 2004 fantasy mmorpg, uniform surface"
+    }
+  }
+}

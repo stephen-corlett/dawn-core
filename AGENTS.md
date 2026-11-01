@@ -23,8 +23,9 @@ where code belongs.
 - Keep server-only rules out of client-reachable crates.
 - Don't add game crates to `xtask`.
 - Follow [docs/assets.md](docs/assets.md) before adding an asset. Only pull CC0 assets
-  from Poly Haven or ambientCG, and ask a human before using any other source or
-  licence. Use 1K textures by default, and record each download in `assets/SOURCES.md`.
+  from Poly Haven, ambientCG, or Quaternius, and ask a human before using any other source
+  or licence. Use 1K textures by default, and record each download in `assets/SOURCES.md`.
+  Only generate art the way that document describes.
 - Don't weaken a check or raise a limit to get a change through. Fix the design,
   or ask a human to approve a rule change.
 
@@ -49,6 +50,7 @@ used:
 |---|---|
 | `just dev` | Run the server and two clients |
 | `just sandbox <name>` | Run one game module's sandbox |
+| `just lookdev` | Show art under the game's real lighting, or capture it with `--capture <folder>` |
 | `just check` | Run formatting, architecture, lint, and isolated-build checks |
 | `just test` | Run every test |
 | `just coverage` | Fail if tests cover under 90% of changed lines, and list the gaps |
@@ -64,6 +66,11 @@ Follow [.agents/skills/upgrade-bevy/SKILL.md](.agents/skills/upgrade-bevy/SKILL.
 upgrade Bevy or lightyear. Skills live in `.agents/skills/`, the location shared across
 agents. Claude Code doesn't list that folder, so each skill also has a short pointer
 in `.claude/skills/`, the same way `CLAUDE.md` points to this file.
+
+## Adding art
+
+Follow [docs/art-pipeline.md](docs/art-pipeline.md) to add or improve art. The `art-integration`
+skill runs the whole process, and asks a person for each art decision.
 
 ## Testing
 

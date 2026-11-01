@@ -1,11 +1,12 @@
 # Assets
 
-Game assets are human-made, free to use, and as small as they can be. The goals are
+Game assets are free to use and as small as they can be. The goals are
 no storage bill, a fast download for contributors and players, and a clear licence for
 everything that ships.
 
 Nothing here is checked automatically, so these rules need human judgment during code
-review.
+review. For the process of getting art into the game, see
+[docs/art-pipeline.md](art-pipeline.md).
 
 ## What goes where
 
@@ -52,8 +53,9 @@ allowing another licence needs a human's approval and a change to this file.
 
 - **No other licences:** Don't use CC-BY or any other licence, even from an approved
   library. If an asset isn't marked CC0, leave it out.
-- **No AI-generated assets:** Leave out anything that's labeled as AI-generated or looks
-  like it might be.
+- **No downloaded AI art:** Leave out anything from a library that's labeled as AI-generated
+  or looks like it might be, because its source can't be checked. We generate our own instead,
+  as described in [Generating art](#generating-art).
 - **Check each asset:** A site's general licence isn't enough. Confirm the licence on
   the asset you're downloading.
 - **Quaternius has two licences:** Newer content can use the Quaternius Asset License
@@ -62,8 +64,20 @@ allowing another licence needs a human's approval and a change to this file.
 - **If nothing fits:** Ask a human instead of looking elsewhere.
 - **Record each download:** Add one row to `assets/SOURCES.md` with the asset, source
   link, and licence. CC0 needs no credit, but the record shows an asset's licence and
-  that it isn't AI-generated, and it tells us what to replace if a source turns out to
-  be a problem.
+  how it was made, and it tells us what to replace if a source turns out to be a problem.
+
+## Generating art
+
+This is a hobby project with no planned release, so we can generate textures with an AI image
+model running on a local machine. A person still approves everything that goes in the game.
+
+- **Licence:** The model's licence has to allow this use, and it's recorded with the texture.
+- **Style sources:** Don't train on other people's art or feed it in, and don't name living
+  artists or other games in prompts. A style comes from CC0 art, or from art that's ours.
+- **Record each texture:** Add one row to `assets/SOURCES.md` with the model, prompt, and seed.
+- **Commit late:** Only commit final textures, because experiments still count against LFS.
+- **If this changes:** Review all generated art before any public release. Store disclosure and
+  copyright rules apply to it, and this exception assumes that nothing is being sold.
 
 ## Staying inside the free tier
 

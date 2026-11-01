@@ -73,6 +73,8 @@ mod tests {
                 fog_start: 10.0,
                 fog_end: 80.0,
                 shadow_distance: 60.0,
+                shadow_cascades: 2,
+                shadow_resolution: 1024,
                 saturation: 0.8,
                 glow: 0.1,
             },

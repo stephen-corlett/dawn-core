@@ -1,0 +1,13 @@
+# Bakes generated art into the game's assets. It isn't part of the game, so it has a workspace
+# of its own and never reaches a game build.
+[package]
+name = "art-bake"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+serde_json = { version = "1", features = ["preserve_order"] }
