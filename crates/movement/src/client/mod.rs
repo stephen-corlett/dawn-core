@@ -19,7 +19,6 @@ pub struct MoveBindings {
     pub dodge: Vec<KeyCode>,
     /// Pressing one of these switches sneaking on or off.
     pub sneak: Vec<KeyCode>,
-    pub sprint: Vec<KeyCode>,
 }
 
 pub struct MovementClientPlugin {
@@ -76,13 +75,7 @@ fn write_move_input(
         keys.as_ref()
             .is_some_and(|keys| keys.any_pressed(bound.iter().copied()))
     };
-    let gait = if held(&bindings.sprint) {
-        Gait::Sprint
-    } else if sneak.0 {
-        Gait::Sneak
-    } else {
-        Gait::Run
-    };
+    let gait = if sneak.0 { Gait::Sneak } else { Gait::Run };
     action_state.0 = MoveInput {
         forward: held(&bindings.forward),
         back: held(&bindings.back),
@@ -131,7 +124,6 @@ mod tests {
     const CONFIG: MovementConfig = MovementConfig {
         sneak_speed: 2.0,
         run_speed: 7.0,
-        sprint_speed: 10.0,
         dodge_lunge_speed: 12.0,
         dodge_lunge_secs: 0.3,
         dodge_rollout_speed: 3.0,
@@ -159,7 +151,6 @@ mod tests {
                 jump: vec![KeyCode::Space],
                 dodge: vec![KeyCode::ControlLeft],
                 sneak: vec![KeyCode::KeyC],
-                sprint: vec![KeyCode::ShiftLeft],
             },
             surface: Surface(Arc::new(FlatSurface)),
         });
@@ -248,23 +239,6 @@ mod tests {
                 test("it only counts once", || {
                     assert_eq!(first.gait, Gait::Sneak);
                     assert!(app.world().resource::<SneakToggle>().0);
-                });
-            });
-
-            when("they sprint while sneaking is on", || {
-                tap_sneak(&mut app, player);
-                let input = input_with(&mut app, player, KeyCode::ShiftLeft);
-
-                test("sprinting wins", || {
-                    assert_eq!(input.gait, Gait::Sprint);
-                });
-            });
-
-            when("the sprint key is held", || {
-                let input = input_with(&mut app, player, KeyCode::ShiftLeft);
-
-                test("they ask to sprint", || {
-                    assert_eq!(input.gait, Gait::Sprint);
                 });
             });
 

@@ -17,7 +17,6 @@ This builds everything, starts the server, and opens two client windows. Press C
 | Control | Action |
 |---|---|
 | WASD or arrow keys | Move, relative to the camera |
-| Shift | Sprint |
 | Left Ctrl | Dodge roll in the direction you're moving |
 | C | Switch sneaking on or off |
 | Space | Jump |

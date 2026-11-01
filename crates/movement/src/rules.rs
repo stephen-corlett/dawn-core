@@ -119,7 +119,6 @@ fn gait_speed(gait: Gait, config: &MovementConfig) -> f32 {
     match gait {
         Gait::Sneak => config.sneak_speed,
         Gait::Run => config.run_speed,
-        Gait::Sprint => config.sprint_speed,
     }
 }
 
@@ -137,7 +136,6 @@ mod tests {
     const CONFIG: MovementConfig = MovementConfig {
         sneak_speed: 2.0,
         run_speed: 10.0,
-        sprint_speed: 16.0,
         dodge_lunge_speed: 12.0,
         dodge_lunge_secs: 0.3,
         dodge_rollout_speed: 3.0,
@@ -347,22 +345,6 @@ mod tests {
             });
         });
 
-        given("a player asking to sprint", || {
-            let input = MoveInput {
-                right: true,
-                gait: Gait::Sprint,
-                ..default()
-            };
-
-            when("one step runs", || {
-                let moved = step_position(Vec3::ZERO, &input);
-
-                test("the player moves at sprinting speed", || {
-                    assert_eq!(moved.x, CONFIG.sprint_speed * DELTA);
-                });
-            });
-        });
-
         given("a player running at a wall", || {
             let input = MoveInput {
                 right: true,
@@ -425,7 +407,6 @@ mod tests {
         given("a player running off a drop too steep to follow", || {
             let input = MoveInput {
                 left: true,
-                gait: Gait::Sprint,
                 ..default()
             };
 
@@ -652,21 +633,6 @@ mod tests {
                 let moved = step(body, &hold);
 
                 test("they move at recovery speed", || {
-                    let moved_by = moved.position.x - start;
-                    assert!((moved_by - CONFIG.dodge_recovery_speed * DELTA).abs() < 0.0001);
-                });
-            });
-
-            when("they try to sprint out of it", || {
-                let sprint = MoveInput {
-                    right: true,
-                    gait: Gait::Sprint,
-                    ..default()
-                };
-                let start = body.position.x;
-                let moved = step(body, &sprint);
-
-                test("sprinting doesn't help", || {
                     let moved_by = moved.position.x - start;
                     assert!((moved_by - CONFIG.dodge_recovery_speed * DELTA).abs() < 0.0001);
                 });

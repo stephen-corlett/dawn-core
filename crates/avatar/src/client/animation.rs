@@ -7,8 +7,7 @@ use core::time::Duration;
 use movement::MovementConfig;
 
 /// How a looping movement clip follows a body's speed. Its rate stretches to keep the feet
-/// planted, but only so far, so that a sprint under a huge speed boost still looks like a
-/// sprint.
+/// planted, but only so far, so that a run under a huge speed boost still looks like a run.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GaitClip {
     /// How fast the clip's feet travel at normal rate, in world units per second.
@@ -31,7 +30,6 @@ pub struct ClipIndices {
     pub sneak: usize,
     pub walk: usize,
     pub run: usize,
-    pub sprint: usize,
     pub roll: usize,
     pub jump_start: usize,
     pub falling: usize,
@@ -47,12 +45,8 @@ pub struct AnimationConfig {
     pub sneak_clip: GaitClip,
     pub walk_clip: GaitClip,
     pub run_clip: GaitClip,
-    pub sprint_clip: GaitClip,
     /// A body upright and slower than this share of normal run speed walks.
     pub walk_below: f32,
-    /// A body upright and faster than this share of normal run speed sprints. It sits a
-    /// little over 1, so that a body at run speed doesn't flicker between the two.
-    pub sprint_above: f32,
     /// Plays the jump start and landing clips this much faster than normal.
     pub jump_rate: f32,
     /// How fast the roll clip plays during a dodge's lunge. It should reach the frame
@@ -76,7 +70,6 @@ pub(super) enum Pose {
     Sneak,
     Walk,
     Run,
-    Sprint,
     Roll,
     JumpStart,
     Falling,
@@ -110,7 +103,6 @@ struct Nodes {
     sneak: AnimationNodeIndex,
     walk: AnimationNodeIndex,
     run: AnimationNodeIndex,
-    sprint: AnimationNodeIndex,
     roll: AnimationNodeIndex,
     jump_start: AnimationNodeIndex,
     falling: AnimationNodeIndex,
@@ -125,7 +117,6 @@ impl Nodes {
             Pose::Sneak => self.sneak,
             Pose::Walk => self.walk,
             Pose::Run => self.run,
-            Pose::Sprint => self.sprint,
             Pose::Roll => self.roll,
             Pose::JumpStart => self.jump_start,
             Pose::Falling => self.falling,
@@ -161,7 +152,6 @@ fn load_clips(app: &mut App, config: &AnimationConfig) -> AvatarClips {
         load(indices.sneak),
         load(indices.walk),
         load(indices.run),
-        load(indices.sprint),
         load(indices.roll),
         load(indices.jump_start),
         load(indices.falling),
@@ -173,11 +163,10 @@ fn load_clips(app: &mut App, config: &AnimationConfig) -> AvatarClips {
         sneak: nodes[2],
         walk: nodes[3],
         run: nodes[4],
-        sprint: nodes[5],
-        roll: nodes[6],
-        jump_start: nodes[7],
-        falling: nodes[8],
-        landing: nodes[9],
+        roll: nodes[5],
+        jump_start: nodes[6],
+        falling: nodes[7],
+        landing: nodes[8],
     };
     let graph = app
         .world_mut()
@@ -262,8 +251,7 @@ fn gait_pose(stride: &Stride, config: &AnimationConfig, movement: &MovementConfi
         (true, false) => Pose::SneakIdle,
         (false, false) => Pose::Idle,
         (false, true) if share_of_run < config.walk_below => Pose::Walk,
-        (false, true) if share_of_run <= config.sprint_above => Pose::Run,
-        (false, true) => Pose::Sprint,
+        (false, true) => Pose::Run,
     }
 }
 
@@ -272,7 +260,6 @@ fn playback_rate(pose: Pose, stride: &Stride, config: &AnimationConfig) -> f32 {
         Pose::Sneak => config.sneak_clip.rate(stride.speed),
         Pose::Walk => config.walk_clip.rate(stride.speed),
         Pose::Run => config.run_clip.rate(stride.speed),
-        Pose::Sprint => config.sprint_clip.rate(stride.speed),
         Pose::Roll if stride.rolling_out => config.rollout_rate,
         Pose::Roll => config.lunge_rate,
         Pose::JumpStart | Pose::Landing => config.jump_rate,
@@ -288,7 +275,6 @@ mod tests {
     const MOVEMENT: MovementConfig = MovementConfig {
         sneak_speed: 2.0,
         run_speed: 6.0,
-        sprint_speed: 10.0,
         dodge_lunge_speed: 7.0,
         dodge_lunge_secs: 0.4,
         dodge_rollout_speed: 2.0,
@@ -320,7 +306,6 @@ mod tests {
                 sneak: 1,
                 walk: 9,
                 run: 2,
-                sprint: 3,
                 roll: 8,
                 jump_start: 4,
                 falling: 5,
@@ -341,13 +326,7 @@ mod tests {
                 slowest_rate: 0.5,
                 fastest_rate: 1.2,
             },
-            sprint_clip: GaitClip {
-                speed: 8.0,
-                slowest_rate: 0.8,
-                fastest_rate: 1.25,
-            },
             walk_below: 0.5,
-            sprint_above: 1.1,
             jump_rate: 2.0,
             lunge_rate: 2.5,
             rollout_rate: 1.5,
@@ -451,14 +430,6 @@ mod tests {
                 });
             });
 
-            when("it wobbles just over run speed", || {
-                let pose = next(Pose::Run, &on_ground(6.2), false);
-
-                test("it keeps running", || {
-                    assert_eq!(pose, Pose::Run);
-                });
-            });
-
             when("it moves near running speed", || {
                 let pose = next(Pose::Idle, &on_ground(6.0), false);
 
@@ -467,11 +438,11 @@ mod tests {
                 });
             });
 
-            when("it moves near sprinting speed", || {
+            when("a speed boost takes it far past run speed", || {
                 let pose = next(Pose::Run, &on_ground(10.0), false);
 
-                test("it sprints", || {
-                    assert_eq!(pose, Pose::Sprint);
+                test("it keeps running", || {
+                    assert_eq!(pose, Pose::Run);
                 });
             });
 
@@ -706,29 +677,19 @@ mod tests {
                 });
             });
 
-            when("a speed boost pushes a sprint far past normal", || {
-                let rate = rate(Pose::Sprint, 80.0);
-
-                test("it still plays like a sprint", || {
-                    assert_eq!(rate, config.sprint_clip.fastest_rate);
-                });
-            });
-
-            when("a sprint is barely moving", || {
-                let rate = rate(Pose::Sprint, 1.0);
+            when("a run is barely moving", || {
+                let rate = rate(Pose::Run, 1.0);
 
                 test("the clip stops slowing down", || {
-                    assert_eq!(rate, config.sprint_clip.slowest_rate);
+                    assert_eq!(rate, config.run_clip.slowest_rate);
                 });
             });
 
-            when("a sneaking or sprinting body is measured", || {
-                let sneaking = rate(Pose::Sneak, 1.5);
-                let sprinting = rate(Pose::Sprint, 8.0);
+            when("a sneaking body is measured", || {
+                let rate = rate(Pose::Sneak, 1.5);
 
-                test("each uses its own clip's speed", || {
-                    assert_eq!(sneaking, 1.5);
-                    assert_eq!(sprinting, 1.0);
+                test("it uses its own clip's speed", || {
+                    assert_eq!(rate, 1.5);
                 });
             });
 

@@ -114,11 +114,7 @@ fn read_keyboard(keys: Res<ButtonInput<KeyCode>>, mut inputs: Query<&mut ActionS
             right: keys.pressed(KeyCode::KeyD),
             jump: keys.pressed(KeyCode::Space),
             dodge: keys.pressed(KeyCode::ControlLeft),
-            gait: if keys.pressed(KeyCode::ShiftLeft) {
-                Gait::Sprint
-            } else {
-                Gait::Run
-            },
+            gait: Gait::Run,
             yaw: 0.0,
         };
     }
@@ -138,7 +134,6 @@ mod tests {
     const SLOW: MovementConfig = MovementConfig {
         sneak_speed: 0.5,
         run_speed: 1.0,
-        sprint_speed: 2.0,
         dodge_lunge_speed: 3.0,
         dodge_lunge_secs: 0.4,
         dodge_rollout_speed: 1.0,

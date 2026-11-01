@@ -73,7 +73,6 @@ pub fn avatar_plugin() -> AvatarClientPlugin {
                 sneak: 1,
                 walk: 42,
                 run: 13,
-                sprint: 36,
                 roll: 27,
                 jump_start: 16,
                 falling: 15,
@@ -94,13 +93,7 @@ pub fn avatar_plugin() -> AvatarClientPlugin {
                 slowest_rate: 0.5,
                 fastest_rate: 1.2,
             },
-            sprint_clip: GaitClip {
-                speed: 8.25,
-                slowest_rate: 0.8,
-                fastest_rate: 1.25,
-            },
             walk_below: 0.5,
-            sprint_above: 1.1,
             jump_rate: 2.0,
             lunge_rate: 1.3,
             rollout_rate: 0.64,
@@ -190,6 +183,15 @@ mod tests {
                         );
                     },
                 );
+            });
+
+            when("the run clip is compared with run speed", || {
+                let clip = avatar.animation.run_clip;
+                let rate = movement_config().run_speed / clip.speed;
+
+                test("it can play fast enough to keep the feet planted", || {
+                    assert!(rate <= clip.fastest_rate, "the clip needs a rate of {rate}");
+                });
             });
 
             when("the camera's limits are inspected", || {

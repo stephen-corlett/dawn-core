@@ -43,7 +43,6 @@ mod tests {
     const CONFIG: MovementConfig = MovementConfig {
         sneak_speed: 2.0,
         run_speed: 7.0,
-        sprint_speed: 10.0,
         dodge_lunge_speed: 12.0,
         dodge_lunge_secs: 0.3,
         dodge_rollout_speed: 3.0,

@@ -29,7 +29,6 @@ pub struct MovementConfig {
     /// Speed of each [`Gait`], in world units per second.
     pub sneak_speed: f32,
     pub run_speed: f32,
-    pub sprint_speed: f32,
     /// Speed during the lunge that opens a dodge roll, in world units per second.
     pub dodge_lunge_speed: f32,
     /// How long the lunge lasts.
@@ -138,7 +137,6 @@ pub enum Gait {
     Sneak,
     #[default]
     Run,
-    Sprint,
 }
 
 impl MapEntities for MoveInput {

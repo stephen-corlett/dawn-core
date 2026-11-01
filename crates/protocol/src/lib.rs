@@ -24,8 +24,7 @@ impl Plugin for ProtocolPlugin {
 pub fn movement_config() -> MovementConfig {
     MovementConfig {
         sneak_speed: 1.5,
-        run_speed: 5.4,
-        sprint_speed: 8.2,
+        run_speed: 6.4,
         dodge_lunge_speed: 9.0,
         dodge_lunge_secs: 0.5,
         dodge_rollout_speed: 1.7,
@@ -51,10 +50,10 @@ mod tests {
             let config = movement_config();
 
             when("a roll is compared with running away", || {
-                let (lunge, sprint) = (config.dodge_lunge_speed, config.sprint_speed);
+                let (lunge, run) = (config.dodge_lunge_speed, config.run_speed);
 
-                test("a lunge outruns a sprint", || {
-                    assert!(lunge > sprint);
+                test("a lunge outruns a run", || {
+                    assert!(lunge > run);
                 });
             });
 

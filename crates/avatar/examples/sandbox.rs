@@ -1,6 +1,6 @@
 //! Runs one character with the real movement rules, with no server or network. Move
-//! with WASD, sprint with Shift, roll with Control, hold C to sneak, jump with Space, and
-//! hold the right mouse button to look around. Run it with `just sandbox avatar`.
+//! with WASD, roll with Control, hold C to sneak, jump with Space, and hold the right
+//! mouse button to look around. Run it with `just sandbox avatar`.
 
 use avatar::client::{
     AnimationConfig, AppearanceConfig, AvatarClientPlugin, CameraConfig, ClipIndices, GaitClip,
@@ -18,8 +18,7 @@ use std::sync::Arc;
 
 const MOVEMENT: MovementConfig = MovementConfig {
     sneak_speed: 1.5,
-    run_speed: 5.4,
-    sprint_speed: 8.2,
+    run_speed: 6.4,
     dodge_lunge_speed: 9.0,
     dodge_lunge_secs: 0.5,
     dodge_rollout_speed: 1.7,
@@ -65,7 +64,6 @@ fn main() {
                     sneak: 1,
                     walk: 42,
                     run: 13,
-                    sprint: 36,
                     roll: 27,
                     jump_start: 16,
                     falling: 15,
@@ -86,13 +84,7 @@ fn main() {
                     slowest_rate: 0.5,
                     fastest_rate: 1.2,
                 },
-                sprint_clip: GaitClip {
-                    speed: 8.25,
-                    slowest_rate: 0.8,
-                    fastest_rate: 1.25,
-                },
                 walk_below: 0.5,
-                sprint_above: 1.1,
                 jump_rate: 2.0,
                 lunge_rate: 1.3,
                 rollout_rate: 0.64,
@@ -143,9 +135,7 @@ fn move_player(
         right: keys.pressed(KeyCode::KeyD),
         jump: keys.pressed(KeyCode::Space),
         dodge: keys.pressed(KeyCode::ControlLeft),
-        gait: if keys.pressed(KeyCode::ShiftLeft) {
-            Gait::Sprint
-        } else if keys.pressed(KeyCode::KeyC) {
+        gait: if keys.pressed(KeyCode::KeyC) {
             Gait::Sneak
         } else {
             Gait::Run
