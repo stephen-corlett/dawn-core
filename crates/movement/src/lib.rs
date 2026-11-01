@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 
 /// Tuning values supplied by the game. The client and server must use the same
 /// values, or prediction will constantly disagree with the server.
-#[derive(Resource, Clone, Copy, Debug, PartialEq)]
+#[derive(Resource, Clone, Copy, Debug, PartialEq, Deserialize)]
 pub struct MovementConfig {
     /// Walking speed in world units per second.
     pub speed: f32,
