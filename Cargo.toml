@@ -40,6 +40,7 @@ lightyear = { version = "0.31", default-features = false, features = [
   "netcode",
   "udp",
 ] }
+ron = "0.12"
 serde = { version = "1", features = ["derive"] }
 
 [workspace.lints.rust]
