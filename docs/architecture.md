@@ -67,6 +67,46 @@ build, so the compiler can't guarantee this alone, and the checks do that job:
 - **Build shipped apps separately:** Always use `cargo build -p server` or `-p client`.
   A `--workspace` build merges both sides, so never ship from one.
 
+### Organizing a growing game module
+
+Start as small as `movement`, and split files only when the code calls for it. As a
+game module grows, organize it by behavior, as in this example for a future `combat`
+crate:
+
+```text
+crates/combat/
+  assets/               Text data that only the sandbox reads
+  examples/sandbox.rs
+  src/lib.rs            Public interface and protocol plugin
+  src/components.rs     Shared components
+  src/messages.rs       Shared network messages
+  src/rules/damage.rs   Pure logic, with no systems or queries
+  src/server/mod.rs     Plugin wiring only
+  src/server/abilities.rs
+  src/server/damage.rs
+  src/client/mod.rs     Plugin wiring only
+  src/client/abilities.rs
+  src/client/hud.rs
+```
+
+- **Split by behavior:** Inside `src/server/` and `src/client/`, give each behavior a
+  file with its own systems, private components, and small plugin. Don't add
+  `systems/`, `resources/`, or `plugins/` folders, because they scatter one behavior
+  across several places. **(review)**
+- **Keep `mod.rs` for wiring:** Once a side has several files, its `mod.rs` holds only
+  the side's plugin and `mod` declarations. **(review)**
+- **Match names across sides:** If a behavior exists on both sides, use the same file
+  name on each. Behavior for one side, such as `hud.rs`, has no counterpart. **(review)**
+- **Group shared definitions by type:** `components.rs` and `messages.rs` are the
+  exception, because they hold data and no behavior. Keep them in `lib.rs` until it
+  gets hard to read. **(review)**
+- **Split when a file does two things:** Line count isn't the test. Turn a file into a
+  folder only when it has separate sub-behaviors of its own. If a side needs more than
+  two levels, consider whether the code is a separate game module. **(review)**
+- **Name what the code does:** Avoid `utils.rs` and `helpers.rs`, because they attract
+  unrelated code. Move the code next to where it's used, or name the file after its
+  job. **(review)**
+
 ## Libraries
 
 `libs/` is for generic subdomains: solved problems with no knowledge of this game.
@@ -201,6 +241,13 @@ reference example.
 - **Allowed communication:** Game modules interact through public components, events,
   and functions in their shared code. One module's `server` code can't call another
   module's `server` code.
+- **The writer owns a component:** If several game modules use a component, it belongs
+  to the one that changes it, and the others only read it. For example, `combat` would
+  own `Health`, and a UI module would display it. **(review)**
+- **Export system sets for ordering:** When another game module must run before or
+  after yours, expose a public system set, which is a named group of systems. Bevy
+  otherwise runs systems in any order, which causes bugs that only appear sometimes.
+  **(review)**
 - **Two game modules need each other:** Rust won't allow the dependency cycle. Pick the
   more basic game module and let the other depend on it, then send information back
   with an event the basic game module defines. Only move a contract lower if neither
