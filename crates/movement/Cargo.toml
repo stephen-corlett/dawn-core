@@ -16,6 +16,7 @@ serde.workspace = true
 
 [dev-dependencies]
 bdd.workspace = true
+ron.workspace = true
 sandbox_kit.workspace = true
 
 [lints]
@@ -24,3 +25,4 @@ workspace = true
 [[example]]
 name = "sandbox"
 required-features = ["server"]
+test = true

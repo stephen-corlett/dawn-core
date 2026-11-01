@@ -5649,6 +5649,7 @@ dependencies = [
  "bdd",
  "bevy",
  "lightyear",
+ "ron",
  "sandbox_kit",
  "serde",
 ]

@@ -12,6 +12,7 @@ review.
 | What | Where |
 |---|---|
 | Assets the game uses | `assets/`, stored with Git LFS |
+| Text data that only a sandbox reads | `crates/<module>/assets/`, as normal text |
 | Where each asset came from | [assets/SOURCES.md](../assets/SOURCES.md), as normal text |
 | Original downloads and zips | A local folder outside the repository |
 | Blender source files | Only if you've edited them and need to keep the changes |
@@ -22,7 +23,8 @@ for good.
 
 Nothing loads from `assets/` yet. Bevy reads from the folder of the crate being run,
 such as `crates/client/assets/`, unless `BEVY_ASSET_ROOT` or `AssetPlugin::file_path`
-says otherwise. Set this up in the apps when the first asset goes in.
+says otherwise. Set this up in the apps when the first asset goes in. Sandboxes don't
+need this, because each already runs from its own crate's folder.
 
 ## Keeping files small
 

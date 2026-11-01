@@ -3,6 +3,7 @@
 *.rs text eol=lf
 *.toml text eol=lf
 *.md text eol=lf
+*.ron text eol=lf
 
 # Binary game assets are stored with Git LFS.
 *.png filter=lfs diff=lfs merge=lfs -text
