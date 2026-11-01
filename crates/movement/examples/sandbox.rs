@@ -7,9 +7,10 @@ use bevy::asset::{AssetLoader, LoadContext};
 use bevy::prelude::*;
 use lightyear::prelude::input::native::ActionState;
 use movement::server::MovementServerPlugin;
-use movement::{MoveInput, MovementConfig, PlayerPosition};
+use movement::{FlatSurface, Gait, MoveInput, MovementConfig, PlayerPosition, Surface};
 use sandbox_kit::SandboxPlugin;
 use serde::Deserialize;
+use std::sync::Arc;
 
 const TUNING_ASSET: &str = "sandbox_tuning.ron";
 // Assets load in the background, but the plugins need their values now.
@@ -58,8 +59,12 @@ fn main() {
         .add_plugins(SandboxPlugin {
             title: "Movement".into(),
             ground_size: config.world_half_extent * 2.0,
+            asset_folder: "assets".into(),
         })
-        .add_plugins(MovementServerPlugin { config })
+        .add_plugins(MovementServerPlugin {
+            config,
+            surface: Surface(Arc::new(FlatSurface)),
+        })
         .init_asset::<MovementTuning>()
         .init_asset_loader::<TuningLoader>()
         .add_systems(Startup, (load_tuning, spawn_capsule))
@@ -107,6 +112,13 @@ fn read_keyboard(keys: Res<ButtonInput<KeyCode>>, mut inputs: Query<&mut ActionS
             back: keys.pressed(KeyCode::KeyS),
             left: keys.pressed(KeyCode::KeyA),
             right: keys.pressed(KeyCode::KeyD),
+            jump: keys.pressed(KeyCode::Space),
+            gait: if keys.pressed(KeyCode::ShiftLeft) {
+                Gait::Sprint
+            } else {
+                Gait::Run
+            },
+            yaw: 0.0,
         };
     }
 }
@@ -123,12 +135,18 @@ mod tests {
     use bdd::spec;
 
     const SLOW: MovementConfig = MovementConfig {
-        speed: 1.0,
+        walk_speed: 0.5,
+        run_speed: 1.0,
+        sprint_speed: 2.0,
+        jump_speed: 7.0,
+        gravity: 18.0,
+        ground_snap: 0.4,
+        body_radius: 0.4,
         world_half_extent: 10.0,
     };
     const FAST: MovementConfig = MovementConfig {
-        speed: 20.0,
-        world_half_extent: 10.0,
+        run_speed: 20.0,
+        ..SLOW
     };
 
     fn tuning_app() -> App {

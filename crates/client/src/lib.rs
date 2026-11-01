@@ -1,21 +1,24 @@
 //! The game client. This crate assembles the game module plugins and owns the
-//! connection and world view. Game features belong in game module crates.
+//! connection. Game features belong in game module crates.
 
 pub mod config;
+pub mod look;
 pub mod network;
-pub mod view;
 
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use config::ClientConfig;
 use foundation::net::tick_duration;
 use lightyear::prelude::client::ClientPlugins;
+use movement::Surface;
 use movement::client::{MoveBindings, MovementClientPlugin};
 use network::ClientNetworkPlugin;
 use protocol::{ProtocolPlugin, movement_config};
+use std::sync::Arc;
+use world::Forest;
 
 /// The movement plugin with this game's tuning and default keys.
-pub fn movement_plugin() -> MovementClientPlugin {
+pub fn movement_plugin(forest: Arc<Forest>) -> MovementClientPlugin {
     MovementClientPlugin {
         config: movement_config(),
         bindings: MoveBindings {
@@ -23,7 +26,11 @@ pub fn movement_plugin() -> MovementClientPlugin {
             back: vec![KeyCode::KeyS, KeyCode::ArrowDown],
             left: vec![KeyCode::KeyA, KeyCode::ArrowLeft],
             right: vec![KeyCode::KeyD, KeyCode::ArrowRight],
+            jump: vec![KeyCode::Space],
+            walk: vec![KeyCode::ControlLeft],
+            sprint: vec![KeyCode::ShiftLeft],
         },
+        surface: Surface(forest),
     }
 }
 
@@ -35,6 +42,7 @@ pub fn build_headless_app(config: ClientConfig) -> App {
         tick_duration: tick_duration(),
     });
     app.add_plugins(ProtocolPlugin);
-    app.add_plugins((ClientNetworkPlugin { config }, movement_plugin()));
+    let forest = protocol::forest(&movement_config());
+    app.add_plugins((ClientNetworkPlugin { config }, movement_plugin(forest)));
     app
 }

@@ -1,26 +1,72 @@
-use crate::{MoveInput, MovementConfig};
+use crate::{Gait, MoveInput, MovementConfig, WalkSurface};
 use bevy::prelude::*;
 
-/// Returns where a player ends up after `delta_secs` of input.
-pub fn next_position(
+/// The parts of a player that movement simulates.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Body {
+    pub position: Vec3,
+    pub vertical_speed: f32,
+}
+
+/// Returns where a player's body ends up after `delta_secs` of input.
+pub fn next_body(
+    body: Body,
+    input: &MoveInput,
+    delta_secs: f32,
+    config: &MovementConfig,
+    surface: &dyn WalkSurface,
+) -> Body {
+    let flat = walk_to(body.position, input, delta_secs, config, surface);
+    let ground = surface.ground_height(flat);
+
+    let grounded = body.vertical_speed == 0.0 && body.position.y - ground <= config.ground_snap;
+    let vertical_speed = match (grounded, input.jump) {
+        (true, true) => config.jump_speed,
+        (true, false) => 0.0,
+        (false, _) => body.vertical_speed - config.gravity * delta_secs,
+    };
+    let y = if grounded && !input.jump {
+        ground
+    } else {
+        (body.position.y + vertical_speed * delta_secs).max(ground)
+    };
+
+    let landed = y <= ground && vertical_speed < 0.0;
+    Body {
+        position: Vec3::new(flat.x, y, flat.y),
+        vertical_speed: if landed { 0.0 } else { vertical_speed },
+    }
+}
+
+/// Returns where a player's feet end up on the XZ plane.
+fn walk_to(
     position: Vec3,
     input: &MoveInput,
     delta_secs: f32,
     config: &MovementConfig,
-) -> Vec3 {
-    let direction = Vec3::new(
+    surface: &dyn WalkSurface,
+) -> Vec2 {
+    let held = Vec3::new(
         axis(input.right, input.left),
         0.0,
         axis(input.back, input.forward),
-    )
-    .normalize_or_zero();
+    );
+    // Normalizing last also turns a yaw that isn't a number into no movement.
+    let direction = (Quat::from_rotation_y(input.yaw) * held).normalize_or_zero();
 
-    let moved = position + direction * config.speed * delta_secs;
+    let moved = position.xz() + direction.xz() * gait_speed(input.gait, config) * delta_secs;
     let extent = config.world_half_extent;
-    moved.clamp(
-        Vec3::new(-extent, f32::NEG_INFINITY, -extent),
-        Vec3::new(extent, f32::INFINITY, extent),
-    )
+    surface
+        .push_out(moved, config.body_radius)
+        .clamp(Vec2::splat(-extent), Vec2::splat(extent))
+}
+
+fn gait_speed(gait: Gait, config: &MovementConfig) -> f32 {
+    match gait {
+        Gait::Walk => config.walk_speed,
+        Gait::Run => config.run_speed,
+        Gait::Sprint => config.sprint_speed,
+    }
 }
 
 fn axis(positive: bool, negative: bool) -> f32 {
@@ -30,26 +76,71 @@ fn axis(positive: bool, negative: bool) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::FlatSurface;
     use bdd::spec;
+    use core::f32::consts::FRAC_PI_2;
 
     const CONFIG: MovementConfig = MovementConfig {
-        speed: 10.0,
+        walk_speed: 2.0,
+        run_speed: 10.0,
+        sprint_speed: 16.0,
+        jump_speed: 8.0,
+        gravity: 20.0,
+        ground_snap: 0.5,
+        body_radius: 0.4,
         world_half_extent: 50.0,
     };
     const DELTA: f32 = 0.1;
-    const STEP: f32 = CONFIG.speed * DELTA;
+    const STEP: f32 = CONFIG.run_speed * DELTA;
 
-    fn step(position: Vec3, input: &MoveInput) -> Vec3 {
-        next_position(position, input, DELTA, &CONFIG)
+    /// Ground that rises one unit for every unit east of the origin.
+    struct Ramp;
+
+    impl WalkSurface for Ramp {
+        fn ground_height(&self, at: Vec2) -> f32 {
+            at.x
+        }
+
+        fn push_out(&self, at: Vec2, _radius: f32) -> Vec2 {
+            at
+        }
+    }
+
+    /// A solid wall along the line x = 1.
+    struct Wall;
+
+    impl WalkSurface for Wall {
+        fn ground_height(&self, _at: Vec2) -> f32 {
+            0.0
+        }
+
+        fn push_out(&self, at: Vec2, radius: f32) -> Vec2 {
+            Vec2::new(at.x.min(1.0 - radius), at.y)
+        }
+    }
+
+    fn standing_at(position: Vec3) -> Body {
+        Body {
+            position,
+            vertical_speed: 0.0,
+        }
+    }
+
+    fn step(body: Body, input: &MoveInput) -> Body {
+        next_body(body, input, DELTA, &CONFIG, &FlatSurface)
+    }
+
+    fn step_position(position: Vec3, input: &MoveInput) -> Vec3 {
+        step(standing_at(position), input).position
     }
 
     #[spec]
-    fn movement_rules() {
+    fn walking_rules() {
         given("a player with no input", || {
             let start = Vec3::new(1.0, 0.0, 2.0);
 
             when("one step runs", || {
-                let moved = step(start, &MoveInput::default());
+                let moved = step_position(start, &MoveInput::default());
 
                 test("the player stays where they were", || {
                     assert_eq!(moved, start);
@@ -64,10 +155,45 @@ mod tests {
             };
 
             when("one step runs", || {
-                let moved = step(Vec3::ZERO, &input);
+                let moved = step_position(Vec3::ZERO, &input);
 
                 test("the player moves along negative Z", || {
                     assert_eq!(moved, Vec3::new(0.0, 0.0, -STEP));
+                });
+            });
+        });
+
+        given(
+            "a player holding forward with a yaw of a quarter turn left",
+            || {
+                let input = MoveInput {
+                    forward: true,
+                    yaw: FRAC_PI_2,
+                    ..default()
+                };
+
+                when("one step runs", || {
+                    let moved = step_position(Vec3::ZERO, &input);
+
+                    test("the player moves along negative X", || {
+                        assert!(moved.distance(Vec3::new(-STEP, 0.0, 0.0)) < 0.0001);
+                    });
+                });
+            },
+        );
+
+        given("a player sending a yaw that isn't a number", || {
+            let input = MoveInput {
+                forward: true,
+                yaw: f32::NAN,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step_position(Vec3::ZERO, &input);
+
+                test("the player stays where they were", || {
+                    assert_eq!(moved, Vec3::ZERO);
                 });
             });
         });
@@ -80,7 +206,7 @@ mod tests {
             };
 
             when("one step runs", || {
-                let moved = step(Vec3::ZERO, &input);
+                let moved = step_position(Vec3::ZERO, &input);
 
                 test("the player doesn't move", || {
                     assert_eq!(moved, Vec3::ZERO);
@@ -96,7 +222,7 @@ mod tests {
             };
 
             when("one step runs", || {
-                let distance = step(Vec3::ZERO, &input).length();
+                let distance = step_position(Vec3::ZERO, &input).length();
 
                 test("the distance matches one straight step", || {
                     assert!((distance - STEP).abs() < 0.0001);
@@ -112,7 +238,7 @@ mod tests {
             let edge = Vec3::new(CONFIG.world_half_extent, 0.0, 0.0);
 
             when("one step runs", || {
-                let moved = step(edge, &input);
+                let moved = step_position(edge, &input);
 
                 test("the player stays at the edge", || {
                     assert_eq!(moved, edge);
@@ -120,23 +246,220 @@ mod tests {
             });
         });
 
-        given("a player with a speed of 20 holding right", || {
+        given("a player with a run speed of 20 holding right", || {
             let input = MoveInput {
                 right: true,
                 ..default()
             };
             let fast = MovementConfig {
-                speed: 20.0,
+                run_speed: 20.0,
                 ..CONFIG
             };
 
             when("half a second passes", || {
-                let moved = next_position(Vec3::ZERO, &input, 0.5, &fast);
+                let moved = next_body(standing_at(Vec3::ZERO), &input, 0.5, &fast, &FlatSurface);
 
                 test("the player has moved 10 units", || {
-                    assert_eq!(moved, Vec3::new(10.0, 0.0, 0.0));
+                    assert_eq!(moved.position, Vec3::new(10.0, 0.0, 0.0));
                 });
             });
         });
+
+        given("a player asking to walk", || {
+            let input = MoveInput {
+                right: true,
+                gait: Gait::Walk,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step_position(Vec3::ZERO, &input);
+
+                test("the player moves at walking speed", || {
+                    assert_eq!(moved.x, CONFIG.walk_speed * DELTA);
+                });
+            });
+        });
+
+        given("a player asking to sprint", || {
+            let input = MoveInput {
+                right: true,
+                gait: Gait::Sprint,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step_position(Vec3::ZERO, &input);
+
+                test("the player moves at sprinting speed", || {
+                    assert_eq!(moved.x, CONFIG.sprint_speed * DELTA);
+                });
+            });
+        });
+
+        given("a player running at a wall", || {
+            let input = MoveInput {
+                right: true,
+                forward: true,
+                ..default()
+            };
+            let start = Vec3::new(1.0 - CONFIG.body_radius, 0.0, 0.0);
+
+            when("one step runs", || {
+                let moved = next_body(standing_at(start), &input, DELTA, &CONFIG, &Wall);
+
+                test("the wall stops them", || {
+                    assert_eq!(moved.position.x, start.x);
+                });
+
+                test("they slide along it", || {
+                    assert!(moved.position.z < 0.0);
+                });
+            });
+        });
+    }
+
+    #[spec]
+    fn ground_rules() {
+        given("a player walking up a slope", || {
+            let input = MoveInput {
+                right: true,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = next_body(standing_at(Vec3::ZERO), &input, DELTA, &CONFIG, &Ramp);
+
+                test("their feet stay on the ground", || {
+                    assert_eq!(moved.position.y, moved.position.x);
+                });
+            });
+        });
+
+        given(
+            "a player going down a slope slowly enough to stay on it",
+            || {
+                let input = MoveInput {
+                    left: true,
+                    gait: Gait::Walk,
+                    ..default()
+                };
+
+                when("one step runs", || {
+                    let moved = next_body(standing_at(Vec3::ZERO), &input, DELTA, &CONFIG, &Ramp);
+
+                    test("they follow the ground instead of falling", || {
+                        assert_eq!(moved.vertical_speed, 0.0);
+                        assert_eq!(moved.position.y, moved.position.x);
+                    });
+                });
+            },
+        );
+
+        given("a player running off a drop too steep to follow", || {
+            let input = MoveInput {
+                left: true,
+                gait: Gait::Sprint,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = next_body(standing_at(Vec3::ZERO), &input, DELTA, &CONFIG, &Ramp);
+
+                test("they fall", || {
+                    assert!(moved.vertical_speed < 0.0);
+                    assert!(moved.position.y > moved.position.x);
+                });
+            });
+        });
+
+        given("a player standing with the ground far below them", || {
+            let start = standing_at(Vec3::new(0.0, 10.0, 0.0));
+
+            when("one step runs", || {
+                let moved = step(start, &MoveInput::default());
+
+                test("they start to fall", || {
+                    assert!(moved.vertical_speed < 0.0);
+                    assert!(moved.position.y < start.position.y);
+                });
+            });
+        });
+    }
+
+    #[spec]
+    fn jumping_rules() {
+        given("a grounded player holding jump", || {
+            let input = MoveInput {
+                jump: true,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step(standing_at(Vec3::ZERO), &input);
+
+                test("they leave the ground", || {
+                    assert_eq!(moved.vertical_speed, CONFIG.jump_speed);
+                    assert!(moved.position.y > 0.0);
+                });
+            });
+
+            when("the jump plays out", || {
+                let mut body = step(standing_at(Vec3::ZERO), &input);
+                let mut peak = 0.0_f32;
+                let released = MoveInput::default();
+                for _ in 0..20 {
+                    body = step(body, &released);
+                    peak = peak.max(body.position.y);
+                }
+
+                test("they rise and come back to the ground", || {
+                    assert!(peak > 0.5, "peak {peak}");
+                    assert_eq!(body.position.y, 0.0);
+                    assert_eq!(body.vertical_speed, 0.0);
+                });
+            });
+        });
+
+        given("a player in the air holding jump", || {
+            let rising = Body {
+                position: Vec3::new(0.0, 1.0, 0.0),
+                vertical_speed: 2.0,
+            };
+            let input = MoveInput {
+                jump: true,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step(rising, &input);
+
+                test("they can't jump again", || {
+                    assert!(moved.vertical_speed < rising.vertical_speed);
+                });
+            });
+        });
+
+        given(
+            "a player rising into ground that climbs faster than they do",
+            || {
+                let rising = Body {
+                    position: Vec3::new(5.0, 5.0, 0.0),
+                    vertical_speed: 1.0,
+                };
+                let input = MoveInput {
+                    right: true,
+                    ..default()
+                };
+
+                when("one step runs", || {
+                    let moved = next_body(rising, &input, DELTA, &CONFIG, &Ramp);
+
+                    test("the ground lifts them", || {
+                        assert_eq!(moved.position.y, moved.position.x);
+                    });
+                });
+            },
+        );
     }
 }

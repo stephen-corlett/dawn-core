@@ -5,9 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 /// Paths left out of the coverage check. `xtask` is project tooling, `bdd` runs inside
 /// the compiler, and the rest open windows or start whole programs.
-pub const EXCLUDED_PATHS: [&str; 6] = [
+pub const EXCLUDED_PATHS: [&str; 5] = [
     "crates/client/src/main.rs",
-    "crates/client/src/view.rs",
     "crates/server/src/main.rs",
     "libs/bdd/",
     "libs/sandbox_kit/",

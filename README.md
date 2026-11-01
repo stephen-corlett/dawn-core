@@ -12,9 +12,16 @@ You need Rust, the Visual Studio C++ build tools, `just`, `cargo-nextest`, and
 just dev
 ```
 
-This builds everything, starts the server, and opens two client windows. Move
-with WASD or the arrow keys. Your character is blue and other players are
-orange. Press Ctrl-C or close every client window to stop.
+This builds everything, starts the server, and opens two client windows. Press Ctrl-C or close every client window to stop.
+
+| Control | Action |
+|---|---|
+| WASD or arrow keys | Move, relative to the camera |
+| Shift | Sprint |
+| Left Ctrl | Walk |
+| Space | Jump |
+| Hold right mouse button | Look around |
+| Mouse wheel | Zoom |
 
 The first build compiles the whole engine, so it takes a while.
 
@@ -24,7 +31,7 @@ The first build compiles the whole engine, so it takes a while.
 |---|---|
 | `just dev` | Runs the server and two clients |
 | `just dev 4` | Runs the server and four clients |
-| `just sandbox movement` | Runs one game module without the full game |
+| `just sandbox movement` | Runs one game module without the full game. Try `world` or `avatar` too |
 | `just test` | Runs every test |
 | `just test-unit` | Runs only the unit tests |
 | `just test-integration` | Runs the real server or client against a fake other side |

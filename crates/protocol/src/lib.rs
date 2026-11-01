@@ -2,6 +2,10 @@
 //! registered in, and the tuning values both sides simulate with. Module types
 //! and logic belong in their own crates.
 
+mod forest;
+
+pub use forest::forest;
+
 use bevy::prelude::*;
 use foundation::player::PlayerId;
 use lightyear::prelude::*;
@@ -19,7 +23,13 @@ impl Plugin for ProtocolPlugin {
 
 pub fn movement_config() -> MovementConfig {
     MovementConfig {
-        speed: 7.0,
+        walk_speed: 1.8,
+        run_speed: 5.4,
+        sprint_speed: 8.2,
+        jump_speed: 7.0,
+        gravity: 18.0,
+        ground_snap: 0.4,
+        body_radius: 0.4,
         world_half_extent: 50.0,
     }
 }

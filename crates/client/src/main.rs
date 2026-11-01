@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use clap::Parser;
 use client::config::ClientConfig;
+use client::look::{avatar_plugin, world_plugin};
 use client::movement_plugin;
 use client::network::ClientNetworkPlugin;
-use client::view::ViewPlugin;
 use core::net::SocketAddr;
 use foundation::net::tick_duration;
 use lightyear::prelude::client::ClientPlugins;
-use protocol::ProtocolPlugin;
+use protocol::{ProtocolPlugin, forest, movement_config};
 use std::process::ExitCode;
 
 #[derive(Parser)]
@@ -40,21 +40,30 @@ fn main() -> ExitCode {
     }
 
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            title: format!("Project Dawn - Client {}", args.client_id),
-            ..default()
-        }),
-        ..default()
-    }));
+    app.add_plugins(
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: format!("Project Dawn - Client {}", args.client_id),
+                    ..default()
+                }),
+                ..default()
+            })
+            .set(AssetPlugin {
+                file_path: config.asset_folder.clone(),
+                ..default()
+            }),
+    );
     app.add_plugins(ClientPlugins {
         tick_duration: tick_duration(),
     });
     app.add_plugins(ProtocolPlugin);
+    let forest = forest(&movement_config());
     app.add_plugins((
         ClientNetworkPlugin { config },
-        movement_plugin(),
-        ViewPlugin,
+        movement_plugin(forest.clone()),
+        world_plugin(forest),
+        avatar_plugin(),
     ));
     app.run();
     ExitCode::SUCCESS

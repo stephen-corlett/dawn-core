@@ -14,6 +14,8 @@ pub struct ClientConfig {
     pub server_addr: SocketAddr,
     pub protocol_id: u64,
     pub private_key: [u8; 32],
+    /// Where game assets load from.
+    pub asset_folder: String,
 }
 
 impl ClientConfig {
@@ -43,6 +45,14 @@ impl ClientConfig {
                 .desc("Development signing key, as 64 hex characters")
                 .dev_default(DEV_PRIVATE_KEY),
         );
+        // Bevy looks beside a shipped game, but under the crate during `cargo run`.
+        let asset_folder = env.read(
+            "DAWN_ASSET_FOLDER",
+            parsed::<String>()
+                .desc("Folder to load game assets from")
+                .default("assets".into())
+                .dev_default("../../assets".into()),
+        );
         env.validate()?;
 
         Ok(Self {
@@ -50,6 +60,7 @@ impl ClientConfig {
             server_addr: server_addr.value(),
             protocol_id: PROTOCOL_ID,
             private_key: private_key.value(),
+            asset_folder: asset_folder.value(),
         })
     }
 }

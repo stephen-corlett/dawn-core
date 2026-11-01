@@ -1,6 +1,12 @@
 // Movement tuning for `just sandbox movement`. Save this file while the sandbox runs
 // to apply it. The ground keeps its size until the sandbox restarts.
 (
-    speed: 7.0,
+    walk_speed: 1.8,
+    run_speed: 5.4,
+    sprint_speed: 8.2,
+    jump_speed: 7.0,
+    gravity: 18.0,
+    ground_snap: 0.4,
+    body_radius: 0.4,
     world_half_extent: 10.0,
 )
