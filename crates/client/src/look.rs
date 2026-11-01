@@ -96,7 +96,7 @@ pub fn avatar_plugin() -> AvatarClientPlugin {
             sprint_above: 1.1,
             jump_rate: 2.0,
             lunge_rate: 1.62,
-            rollout_rate: 1.03,
+            rollout_rate: 0.64,
             fade_secs: 0.15,
             moving_speed: 0.3,
         },
@@ -125,6 +125,10 @@ mod tests {
     use protocol::{forest, movement_config};
     use std::path::Path;
 
+    /// How far into the roll clip its feet stop travelling. The rest is the body standing
+    /// up on the spot, so a moving roll has to hand over to a gait by here.
+    const ROLL_CLIP_TRAVEL_SECS: f32 = 1.0;
+
     #[spec]
     fn the_games_look() {
         given("this game's plugins", || {
@@ -150,6 +154,23 @@ mod tests {
                 test("the distance fades into the sky", || {
                     assert_eq!(fog, world.mood.sky);
                 });
+            });
+
+            when("the roll's timing is compared with its clip", || {
+                let movement = movement_config();
+                let animation = &avatar.animation;
+                let clip_secs = movement.dodge_lunge_secs * animation.lunge_rate
+                    + movement.dodge_rollout_secs * animation.rollout_rate;
+
+                test(
+                    "the roll ends where the clip's feet stop travelling",
+                    || {
+                        assert!(
+                            (clip_secs - ROLL_CLIP_TRAVEL_SECS).abs() < 0.05,
+                            "the roll reaches {clip_secs} seconds into the clip"
+                        );
+                    },
+                );
             });
 
             when("the camera's limits are inspected", || {

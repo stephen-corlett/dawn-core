@@ -58,7 +58,8 @@ pub struct AnimationConfig {
     /// How fast the roll clip plays during a dodge's lunge. It should reach the frame
     /// where the body lands on its back just as the lunge ends.
     pub lunge_rate: f32,
-    /// How fast the roll clip plays during the roll-out, to finish as that finishes.
+    /// How fast the roll clip plays during the roll-out. The roll should end where the
+    /// clip's feet stop travelling, or the body glides through the clip's stand-up.
     pub rollout_rate: f32,
     /// How long one pose takes to blend into the next.
     pub fade_secs: f32,
