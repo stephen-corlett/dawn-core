@@ -1,3 +1,4 @@
+use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 use clap::Parser;
 use client::config::ClientConfig;
@@ -52,7 +53,9 @@ fn main() -> ExitCode {
             .set(AssetPlugin {
                 file_path: config.asset_folder.clone(),
                 ..default()
-            }),
+            })
+            // Nothing uses gamepads yet, and this stops keyboards that claim to be one.
+            .disable::<GilrsPlugin>(),
     );
     app.add_plugins(ClientPlugins {
         tick_duration: tick_duration(),
