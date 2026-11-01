@@ -32,7 +32,7 @@ jobs:
       - run: cargo check --workspace --all-targets
       # Test reuses this instrumented build. The filter compiles everything and runs
       # nothing.
-      - run: cargo llvm-cov nextest --no-report --workspace --filterset 'none()' --no-tests=pass
+      - run: cargo llvm-cov nextest --no-report --workspace --exclude xtask --filterset 'none()' --no-tests=pass
 
   lint:
     name: Lint
@@ -73,7 +73,7 @@ jobs:
         run: cargo xtask coverage --base origin/${{ github.base_ref }}
       - name: End-to-end tests
         if: ${{ !cancelled() }}
-        run: cargo llvm-cov nextest --no-report --workspace --filterset 'package(e2e)'
+        run: cargo llvm-cov nextest --no-report --workspace --exclude xtask --filterset 'package(e2e)'
       # Forked pull requests can't write comments, which shouldn't fail their checks.
       - name: Comment on the pull request
         if: ${{ !cancelled() }}

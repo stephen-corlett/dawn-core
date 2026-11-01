@@ -22,13 +22,13 @@ client id="1":
 sandbox name:
     cargo run -p {{name}} --example sandbox --all-features --features sandbox_kit/dev
 
-# Run every test
+# Run every test in crates and libs
 test:
-    cargo nextest run --workspace
+    cargo nextest run --workspace --exclude xtask
 
 # Run functions and modules in isolation
 test-unit:
-    cargo nextest run --workspace --lib --bins
+    cargo nextest run --workspace --exclude xtask --lib --bins
 
 # Run the real server or client against a fake other side
 test-integration:

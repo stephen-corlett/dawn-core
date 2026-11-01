@@ -34,7 +34,7 @@ auction house has rich rules of its own, while movement is much thinner today.
 | Client app | `client` | Libraries, foundation, protocol, game modules |
 | Test support | `test_support` | Libraries, foundation, protocol, game modules |
 | End-to-end tests | `e2e` | Anything except `xtask` |
-| Tooling | `xtask` | Libraries only, so no game crates |
+| Tooling | `xtask` | No game crates |
 
 Crates sit directly under `crates/` or `libs/`, and each folder has the same name as
 its crate. `test_support`, `bdd`, and `sandbox_kit` may only be dev-dependencies, so
@@ -305,9 +305,10 @@ comment and annotations have limits, so the job summary is the complete list.
 - **What's compared:** By default, your working tree against where the branch left
   `origin/main`, including uncommitted and new files. Use `just coverage --base <ref>` to
   compare with something else. A repository needs a first commit for this to work.
-- **Excluded code:** `EXCLUDED_PATHS` in `xtask/src/coverage.rs` lists code tests can't
-  reach, such as rendering and program entry points. Don't add to it to get a change
-  through.
+- **What counts:** Code in `crates/` and `libs/`. `xtask/` is project tooling, so it
+  has no tests and doesn't count. `EXCLUDED_PATHS` in `xtask/src/coverage.rs` also leaves
+  out code tests can't reach, such as rendering and program entry points. Don't add to
+  it to get a change through.
 - **Executed isn't verified:** Coverage shows a line ran, not that a test checked the
   result **(review)**.
 
