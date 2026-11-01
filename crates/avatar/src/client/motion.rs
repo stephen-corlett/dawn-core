@@ -131,7 +131,6 @@ mod tests {
         app.insert_resource(MovementConfig {
             sneak_speed: 2.0,
             run_speed: 6.0,
-            sprint_speed: 10.0,
             dodge_lunge_speed: 7.0,
             dodge_lunge_secs: 0.4,
             dodge_rollout_speed: 2.0,

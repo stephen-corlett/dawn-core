@@ -29,7 +29,6 @@ pub fn movement_plugin(forest: Arc<Forest>) -> MovementClientPlugin {
             jump: vec![KeyCode::Space],
             dodge: vec![KeyCode::ControlLeft],
             sneak: vec![KeyCode::KeyC],
-            sprint: vec![KeyCode::ShiftLeft],
         },
         surface: Surface(forest),
     }
