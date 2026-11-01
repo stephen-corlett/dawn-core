@@ -1,7 +1,7 @@
 # Art pipeline
 
-**Status:** In use, but not fully built. See [What's built](#whats-built). The numbers in the
-technical spec are starting values to test, not decisions.
+**Status:** In use, but not fully built. See [What's built](#whats-built). The look is set by
+[the art bible](art/bible.md).
 
 Start with the `art-integration` skill, which runs this whole process.
 
@@ -195,10 +195,15 @@ imported_assets/   What the game reads. Generated, not committed.
 
 | Rule | Starting value |
 |---|---|
-| Texel density | Undecided. The look lock sets it from the hero assets. |
+| Texel density | At least 100 pixels per meter on large props. The ground has about 128. |
 | Texture size | As `docs/assets.md`: 1K, or 2K for things seen up close |
-| Mipmaps | Required on all 3D textures |
+| Mipmaps | Required on all 3D textures, once the cook step exists |
 | Texture values | Neutral, so that lighting carries the mood |
+| Frame rate | At least 200 frames per second in the real game, at 720p on the development machine |
+| Shadows | Two layers at 2048 pixels, reaching 45 meters. Resolution is what costs the most. |
+
+Measure frame rate on a window on the main monitor, because a window on the 59 Hz second monitor
+is capped at 60. Trees cost far more than anything else, so check the frame rate after adding any.
 
 ### Definition of done
 
@@ -213,17 +218,29 @@ the spec is at fault, not the asset.
 | Piece | State | Needed by |
 |---|---|---|
 | Skills, template, and this document | Done | Everything |
-| Art bible, `docs/art/bible.md` | Not written | Gates 1, 3, and 6 |
+| Art bible, `docs/art/bible.md` | Done | Gates 1, 3, and 6 |
 | Look development scene, `just lookdev` | Done | Gates 2 and 5 |
+| Art recipes, `tools/art-bake` | Done for the forest | Gate 3 |
 | Cook step and automated rules | Not built | Gate 4 |
 
-Until these exist, `art-integration` stops at the first gate that needs them and says what's
-missing. Build them in this order:
+`art-integration` stops at gate 4 until the cook step exists, and says so. To build it, test Bevy's
+asset processor with one texture, and prove with a pixel comparison that its mipmaps reach the
+screen. The mipmaps built at load in the local `wip/forest-bakes` branch never did.
 
-1. Decide the look, with the art director: how painted, how detailed, and how dark.
-2. Test Bevy's asset processor with one texture, and prove with a pixel comparison that its
-   mipmaps reach the screen. The mipmaps built at load in `wip/forest-bakes` never did.
-3. Review `wip/forest-bakes` against the bible, and redo only what fits as a pipeline recipe.
+## Art recipes
+
+Generated art is rebuilt, never patched. `tools/art-bake/forest.json` holds each texture's prompt
+and seed, and `forest.sh` generates them through a local ComfyUI and bakes them into `assets/`:
+
+- The ground and bark use the generated texture directly.
+- Rocks get a texture of their own, with stone projected onto them in 3D, so that nothing joins at
+  UV edges.
+- Leaves keep the kit's shapes exactly, with generated brushwork inside them.
+
+Running the recipe reproduced every texture it was checked against, pixel for pixel. ComfyUI
+sometimes crashes partway through. The recipe skips finished textures, so run it again.
+
+To change art, change the recipe and run it. Keep the installation itself out of the repository.
 
 ## Look development scene
 
@@ -243,14 +260,15 @@ those instead, such as `just lookdev --capture ../shots nature/Fern_1.gltf`.
 
 ## Known problems
 
-- **The merged look isn't the baseline.** The photo-scanned ground, white sun, and higher
-  saturation from pull request 19 came before this process. So did the look before it. The look
-  lock compares them, and keeps neither by default.
-- **Generated textures are untested here.** Two of the three approved libraries are mainly
-  realistic materials, so painted textures are planned to come from a local image model. Nothing
-  has proven yet that it can reach the look, or keep a set of textures consistent.
+- **Rocks are soft up close.** They hold up at 5 meters, but not at 1. A detail layer or a small
+  shader is the likely fix.
+- **Some art doesn't match yet.** Grass, ferns, mushrooms, bushes, and dead trees are still the
+  kit's art, and bark still uses the kit's normal maps.
+- **Motion is unjudged.** The ground's bright flecks may look like a pattern while walking, and
+  textures have no mipmaps yet, so distant surfaces may shimmer.
 - **The sky hasn't been judged.** Bevy's atmosphere is physically based, so it needs testing
   against the mood.
+- **Zones share one mood.** The bible expects each zone to have its own.
 - **Art and gameplay layout are tied together.** Model paths and plantings live in
   `crates/protocol/src/forest.rs`, which the server also uses. Adding a planting anywhere but the
   end of the list moves everything after it, including solid trees. Separate these before adding
