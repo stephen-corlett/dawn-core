@@ -1,4 +1,4 @@
-use crate::{Gait, MoveInput, MovementConfig, WalkSurface};
+use crate::{Dodge, Gait, MoveInput, MovementConfig, WalkSurface};
 use bevy::prelude::*;
 
 /// The parts of a player that movement simulates.
@@ -6,6 +6,8 @@ use bevy::prelude::*;
 pub struct Body {
     pub position: Vec3,
     pub vertical_speed: f32,
+    pub dodge: Dodge,
+    pub sneaking: bool,
 }
 
 /// Returns where a player's body ends up after `delta_secs` of input.
@@ -16,16 +18,18 @@ pub fn next_body(
     config: &MovementConfig,
     surface: &dyn WalkSurface,
 ) -> Body {
-    let flat = walk_to(body.position, input, delta_secs, config, surface);
+    let dodge = next_dodge(&body, input, delta_secs, config, surface);
+    let flat = travel_to(body.position, &dodge, input, delta_secs, config, surface);
     let ground = surface.ground_height(flat);
 
     let grounded = body.vertical_speed == 0.0 && body.position.y - ground <= config.ground_snap;
-    let vertical_speed = match (grounded, input.jump) {
+    let jumping = grounded && input.jump && !dodge.is_rolling();
+    let vertical_speed = match (grounded, jumping) {
         (true, true) => config.jump_speed,
         (true, false) => 0.0,
         (false, _) => body.vertical_speed - config.gravity * delta_secs,
     };
-    let y = if grounded && !input.jump {
+    let y = if grounded && !jumping {
         ground
     } else {
         (body.position.y + vertical_speed * delta_secs).max(ground)
@@ -35,35 +39,75 @@ pub fn next_body(
     Body {
         position: Vec3::new(flat.x, y, flat.y),
         vertical_speed: if landed { 0.0 } else { vertical_speed },
+        dodge,
+        sneaking: input.gait == Gait::Sneak,
+    }
+}
+
+/// Counts down any roll underway, and starts a new one if the player can. A roll needs
+/// a direction, so a player standing still can't start one.
+fn next_dodge(
+    body: &Body,
+    input: &MoveInput,
+    delta_secs: f32,
+    config: &MovementConfig,
+    surface: &dyn WalkSurface,
+) -> Dodge {
+    let dodge = body.dodge;
+    let direction = steering(input);
+    let ground = surface.ground_height(body.position.xz());
+    let on_ground = body.vertical_speed == 0.0 && body.position.y - ground <= config.ground_snap;
+    if input.dodge && on_ground && dodge.cooldown_secs <= 0.0 && direction != Vec2::ZERO {
+        return Dodge {
+            direction,
+            remaining_secs: config.dodge_secs,
+            cooldown_secs: config.dodge_secs + config.dodge_cooldown_secs,
+        };
+    }
+    Dodge {
+        remaining_secs: (dodge.remaining_secs - delta_secs).max(0.0),
+        cooldown_secs: (dodge.cooldown_secs - delta_secs).max(0.0),
+        ..dodge
     }
 }
 
 /// Returns where a player's feet end up on the XZ plane.
-fn walk_to(
+fn travel_to(
     position: Vec3,
+    dodge: &Dodge,
     input: &MoveInput,
     delta_secs: f32,
     config: &MovementConfig,
     surface: &dyn WalkSurface,
 ) -> Vec2 {
-    let held = Vec3::new(
-        axis(input.right, input.left),
-        0.0,
-        axis(input.back, input.forward),
-    );
-    // Normalizing last also turns a yaw that isn't a number into no movement.
-    let direction = (Quat::from_rotation_y(input.yaw) * held).normalize_or_zero();
-
-    let moved = position.xz() + direction.xz() * gait_speed(input.gait, config) * delta_secs;
+    let velocity = if dodge.is_rolling() {
+        dodge.direction * config.dodge_speed
+    } else {
+        steering(input) * gait_speed(input.gait, config)
+    };
+    let moved = position.xz() + velocity * delta_secs;
     let extent = config.world_half_extent;
     surface
         .push_out(moved, config.body_radius)
         .clamp(Vec2::splat(-extent), Vec2::splat(extent))
 }
 
+/// The direction a player is steering on the XZ plane, or zero if they aren't.
+fn steering(input: &MoveInput) -> Vec2 {
+    let held = Vec3::new(
+        axis(input.right, input.left),
+        0.0,
+        axis(input.back, input.forward),
+    );
+    // Normalizing last also turns a yaw that isn't a number into no movement.
+    (Quat::from_rotation_y(input.yaw) * held)
+        .normalize_or_zero()
+        .xz()
+}
+
 fn gait_speed(gait: Gait, config: &MovementConfig) -> f32 {
     match gait {
-        Gait::Walk => config.walk_speed,
+        Gait::Sneak => config.sneak_speed,
         Gait::Run => config.run_speed,
         Gait::Sprint => config.sprint_speed,
     }
@@ -81,9 +125,12 @@ mod tests {
     use core::f32::consts::FRAC_PI_2;
 
     const CONFIG: MovementConfig = MovementConfig {
-        walk_speed: 2.0,
+        sneak_speed: 2.0,
         run_speed: 10.0,
         sprint_speed: 16.0,
+        dodge_speed: 12.0,
+        dodge_secs: 0.5,
+        dodge_cooldown_secs: 0.3,
         jump_speed: 8.0,
         gravity: 20.0,
         ground_snap: 0.5,
@@ -123,6 +170,8 @@ mod tests {
         Body {
             position,
             vertical_speed: 0.0,
+            dodge: Dodge::default(),
+            sneaking: false,
         }
     }
 
@@ -265,18 +314,22 @@ mod tests {
             });
         });
 
-        given("a player asking to walk", || {
+        given("a player asking to sneak", || {
             let input = MoveInput {
                 right: true,
-                gait: Gait::Walk,
+                gait: Gait::Sneak,
                 ..default()
             };
 
             when("one step runs", || {
-                let moved = step_position(Vec3::ZERO, &input);
+                let moved = step(standing_at(Vec3::ZERO), &input);
 
-                test("the player moves at walking speed", || {
-                    assert_eq!(moved.x, CONFIG.walk_speed * DELTA);
+                test("the player moves at sneaking speed", || {
+                    assert_eq!(moved.position.x, CONFIG.sneak_speed * DELTA);
+                });
+
+                test("the player counts as sneaking", || {
+                    assert!(moved.sneaking);
                 });
             });
         });
@@ -341,7 +394,7 @@ mod tests {
             || {
                 let input = MoveInput {
                     left: true,
-                    gait: Gait::Walk,
+                    gait: Gait::Sneak,
                     ..default()
                 };
 
@@ -388,6 +441,203 @@ mod tests {
     }
 
     #[spec]
+    fn dodging_rules() {
+        given("a running player pressing dodge", || {
+            let input = MoveInput {
+                right: true,
+                dodge: true,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step(standing_at(Vec3::ZERO), &input);
+
+                test("they roll the way they were moving", || {
+                    assert_eq!(moved.dodge.direction, Vec2::X);
+                    assert!(moved.dodge.is_rolling());
+                });
+
+                test("they move at rolling speed", || {
+                    assert_eq!(moved.position.x, CONFIG.dodge_speed * DELTA);
+                });
+            });
+        });
+
+        given("a player moving relative to a turned camera", || {
+            let input = MoveInput {
+                forward: true,
+                dodge: true,
+                yaw: FRAC_PI_2,
+                ..default()
+            };
+
+            when("they dodge", || {
+                let moved = step(standing_at(Vec3::ZERO), &input);
+
+                test("the roll follows the camera too", || {
+                    assert!(moved.dodge.direction.distance(Vec2::NEG_X) < 0.0001);
+                });
+            });
+        });
+
+        given("a player standing still pressing dodge", || {
+            let input = MoveInput {
+                dodge: true,
+                ..default()
+            };
+
+            when("one step runs", || {
+                let moved = step(standing_at(Vec3::ZERO), &input);
+
+                test("nothing happens", || {
+                    assert!(!moved.dodge.is_rolling());
+                    assert_eq!(moved.position, Vec3::ZERO);
+                });
+            });
+        });
+
+        given("a player in the air pressing dodge", || {
+            let input = MoveInput {
+                right: true,
+                dodge: true,
+                ..default()
+            };
+            let airborne = Body {
+                vertical_speed: 1.0,
+                ..standing_at(Vec3::new(0.0, 3.0, 0.0))
+            };
+
+            when("one step runs", || {
+                let moved = step(airborne, &input);
+
+                test("they can't roll", || {
+                    assert!(!moved.dodge.is_rolling());
+                });
+            });
+        });
+
+        given("a player partway through a roll", || {
+            let rolling = step(
+                standing_at(Vec3::ZERO),
+                &MoveInput {
+                    right: true,
+                    dodge: true,
+                    ..default()
+                },
+            );
+
+            when("they steer the other way", || {
+                let steered = MoveInput {
+                    left: true,
+                    ..default()
+                };
+                let moved = step(rolling, &steered);
+
+                test("the roll carries on", || {
+                    assert!(moved.position.x > rolling.position.x);
+                });
+            });
+
+            when("they stop steering", || {
+                let moved = step(rolling, &MoveInput::default());
+
+                test("the roll carries on", || {
+                    assert!(moved.position.x > rolling.position.x);
+                });
+            });
+
+            when("they press jump", || {
+                let jump = MoveInput {
+                    jump: true,
+                    ..default()
+                };
+                let moved = step(rolling, &jump);
+
+                test("they stay on the ground", || {
+                    assert_eq!(moved.vertical_speed, 0.0);
+                });
+            });
+
+            when("they press dodge again", || {
+                let again = MoveInput {
+                    left: true,
+                    dodge: true,
+                    ..default()
+                };
+                let moved = step(rolling, &again);
+
+                test("the roll doesn't restart", || {
+                    assert_eq!(moved.dodge.direction, Vec2::X);
+                    assert!(moved.dodge.remaining_secs < rolling.dodge.remaining_secs);
+                });
+            });
+        });
+
+        given("a player who has just finished rolling", || {
+            let press = MoveInput {
+                right: true,
+                dodge: true,
+                ..default()
+            };
+            let hold = MoveInput {
+                right: true,
+                ..default()
+            };
+            let mut body = step(standing_at(Vec3::ZERO), &press);
+            while body.dodge.is_rolling() {
+                body = step(body, &hold);
+            }
+
+            when("they press dodge straight away", || {
+                let moved = step(body, &press);
+
+                test("the cooldown stops them", || {
+                    assert!(!moved.dodge.is_rolling());
+                });
+            });
+
+            when("they wait out the cooldown", || {
+                for _ in 0..5 {
+                    body = step(body, &hold);
+                }
+                let moved = step(body, &press);
+
+                test("they can roll again", || {
+                    assert!(moved.dodge.is_rolling());
+                });
+            });
+        });
+
+        given("a roll with a known length", || {
+            let press = MoveInput {
+                right: true,
+                dodge: true,
+                ..default()
+            };
+            let mut body = step(standing_at(Vec3::ZERO), &press);
+
+            when("it finishes", || {
+                let mut rolling_steps = 0;
+                while body.dodge.is_rolling() {
+                    rolling_steps += 1;
+                    body = step(body, &MoveInput::default());
+                }
+
+                test(
+                    "it lasts as long as the config says, to within a tick",
+                    || {
+                        let lasted = rolling_steps as f32 * DELTA;
+                        assert!(
+                            (lasted - CONFIG.dodge_secs).abs() <= DELTA * 1.01,
+                            "lasted {lasted}"
+                        );
+                    },
+                );
+            });
+        });
+    }
+
+    #[spec]
     fn jumping_rules() {
         given("a grounded player holding jump", || {
             let input = MoveInput {
@@ -423,8 +673,8 @@ mod tests {
 
         given("a player in the air holding jump", || {
             let rising = Body {
-                position: Vec3::new(0.0, 1.0, 0.0),
                 vertical_speed: 2.0,
+                ..standing_at(Vec3::new(0.0, 1.0, 0.0))
             };
             let input = MoveInput {
                 jump: true,
@@ -444,8 +694,8 @@ mod tests {
             "a player rising into ground that climbs faster than they do",
             || {
                 let rising = Body {
-                    position: Vec3::new(5.0, 5.0, 0.0),
                     vertical_speed: 1.0,
+                    ..standing_at(Vec3::new(5.0, 5.0, 0.0))
                 };
                 let input = MoveInput {
                     right: true,

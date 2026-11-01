@@ -23,9 +23,12 @@ impl Plugin for ProtocolPlugin {
 
 pub fn movement_config() -> MovementConfig {
     MovementConfig {
-        walk_speed: 1.8,
+        sneak_speed: 1.5,
         run_speed: 5.4,
         sprint_speed: 8.2,
+        dodge_speed: 7.2,
+        dodge_secs: 0.7,
+        dodge_cooldown_secs: 0.4,
         jump_speed: 7.0,
         gravity: 18.0,
         ground_snap: 0.4,

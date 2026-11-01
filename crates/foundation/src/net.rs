@@ -10,7 +10,7 @@ pub const SEND_INTERVAL: Duration = Duration::from_millis(50);
 
 /// Clients with a different protocol ID are refused when they connect.
 /// Increase this whenever a protocol change breaks older clients.
-pub const PROTOCOL_ID: u64 = 2;
+pub const PROTOCOL_ID: u64 = 3;
 
 /// Selects `development` or `production`. Unset means production.
 pub const ENVIRONMENT_VAR: &str = "DAWN_ENV";

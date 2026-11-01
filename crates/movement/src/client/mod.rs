@@ -1,9 +1,7 @@
 //! Reads movement keys, sends them to the server, and predicts the result.
 
-use crate::{
-    Body, Gait, MoveHeading, MoveInput, MovementConfig, PlayerPosition, Surface, VerticalSpeed,
-    next_body,
-};
+use crate::simulation::SimulatedBody;
+use crate::{Gait, MoveHeading, MoveInput, MovementConfig, PlayerPosition, Surface};
 use bevy::prelude::*;
 use lightyear::prelude::client::input::*;
 use lightyear::prelude::input::native::*;
@@ -18,7 +16,9 @@ pub struct MoveBindings {
     pub left: Vec<KeyCode>,
     pub right: Vec<KeyCode>,
     pub jump: Vec<KeyCode>,
-    pub walk: Vec<KeyCode>,
+    pub dodge: Vec<KeyCode>,
+    /// Pressing one of these switches sneaking on or off.
+    pub sneak: Vec<KeyCode>,
     pub sprint: Vec<KeyCode>,
 }
 
@@ -34,6 +34,8 @@ impl Plugin for MovementClientPlugin {
         app.insert_resource(self.bindings.clone());
         app.insert_resource(self.surface.clone());
         app.init_resource::<MoveHeading>();
+        app.init_resource::<SneakToggle>();
+        app.add_systems(Update, toggle_sneak);
         app.add_systems(
             FixedPreUpdate,
             write_move_input.in_set(InputSystems::WriteClientInputs),
@@ -43,10 +45,27 @@ impl Plugin for MovementClientPlugin {
     }
 }
 
+/// Whether the local player has sneaking switched on.
+#[derive(Resource, Default)]
+struct SneakToggle(bool);
+
+/// Runs every frame, because a single key press can fall between two fixed ticks.
+fn toggle_sneak(
+    bindings: Res<MoveBindings>,
+    keys: Option<Res<ButtonInput<KeyCode>>>,
+    mut toggle: ResMut<SneakToggle>,
+) {
+    let pressed = keys.is_some_and(|keys| keys.any_just_pressed(bindings.sneak.iter().copied()));
+    if pressed {
+        toggle.0 = !toggle.0;
+    }
+}
+
 /// Input is optional so that a headless client can run without a keyboard.
 fn write_move_input(
     bindings: Res<MoveBindings>,
     heading: Res<MoveHeading>,
+    sneak: Res<SneakToggle>,
     keys: Option<Res<ButtonInput<KeyCode>>>,
     mut players: Query<&mut ActionState<MoveInput>, With<InputMarker<MoveInput>>>,
 ) {
@@ -59,8 +78,8 @@ fn write_move_input(
     };
     let gait = if held(&bindings.sprint) {
         Gait::Sprint
-    } else if held(&bindings.walk) {
-        Gait::Walk
+    } else if sneak.0 {
+        Gait::Sneak
     } else {
         Gait::Run
     };
@@ -70,6 +89,7 @@ fn write_move_input(
         left: held(&bindings.left),
         right: held(&bindings.right),
         jump: held(&bindings.jump),
+        dodge: held(&bindings.dodge),
         gait,
         yaw: heading.0,
     };
@@ -80,28 +100,11 @@ fn predict_movement(
     time: Res<Time<Fixed>>,
     config: Res<MovementConfig>,
     surface: Res<Surface>,
-    mut players: Query<
-        (
-            &mut PlayerPosition,
-            &mut VerticalSpeed,
-            &ActionState<MoveInput>,
-        ),
-        With<Predicted>,
-    >,
+    mut players: Query<(SimulatedBody, &ActionState<MoveInput>), With<Predicted>>,
 ) {
     let delta_secs = time.timestep().as_secs_f32();
-    for (mut position, mut vertical_speed, input) in &mut players {
-        let body = Body {
-            position: position.0,
-            vertical_speed: vertical_speed.0,
-        };
-        let next = next_body(body, input, delta_secs, &config, surface.0.as_ref());
-        if next.position != position.0 {
-            position.0 = next.position;
-        }
-        if next.vertical_speed != vertical_speed.0 {
-            vertical_speed.0 = next.vertical_speed;
-        }
+    for (mut body, input) in &mut players {
+        body.advance(input, delta_secs, &config, surface.0.as_ref());
     }
 }
 
@@ -126,9 +129,12 @@ mod tests {
     use std::sync::Arc;
 
     const CONFIG: MovementConfig = MovementConfig {
-        walk_speed: 2.0,
+        sneak_speed: 2.0,
         run_speed: 7.0,
         sprint_speed: 10.0,
+        dodge_speed: 12.0,
+        dodge_secs: 0.5,
+        dodge_cooldown_secs: 0.3,
         jump_speed: 8.0,
         gravity: 20.0,
         ground_snap: 0.5,
@@ -148,7 +154,8 @@ mod tests {
                 left: vec![KeyCode::KeyA],
                 right: vec![KeyCode::KeyD],
                 jump: vec![KeyCode::Space],
-                walk: vec![KeyCode::ControlLeft],
+                dodge: vec![KeyCode::ControlLeft],
+                sneak: vec![KeyCode::KeyC],
                 sprint: vec![KeyCode::ShiftLeft],
             },
             surface: Surface(Arc::new(FlatSurface)),
@@ -175,6 +182,23 @@ mod tests {
             .clone()
     }
 
+    /// Presses and lets go of the sneak key, as one frame would see it.
+    fn tap_sneak(app: &mut App, player: Entity) -> MoveInput {
+        let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        keys.release(KeyCode::KeyC);
+        keys.clear();
+        keys.press(KeyCode::KeyC);
+        app.world_mut().run_schedule(Update);
+        let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        keys.clear();
+        app.world_mut().run_schedule(FixedPreUpdate);
+        app.world()
+            .get::<ActionState<MoveInput>>(player)
+            .unwrap()
+            .0
+            .clone()
+    }
+
     #[spec]
     fn reading_input() {
         given("a local player", || {
@@ -189,11 +213,47 @@ mod tests {
                 });
             });
 
-            when("the walk key is held", || {
+            when("the dodge key is held", || {
                 let input = input_with(&mut app, player, KeyCode::ControlLeft);
 
-                test("they ask to walk", || {
-                    assert_eq!(input.gait, Gait::Walk);
+                test("they ask to dodge", || {
+                    assert!(input.dodge);
+                });
+            });
+
+            when("the sneak key is tapped", || {
+                let input = tap_sneak(&mut app, player);
+
+                test("they ask to sneak", || {
+                    assert_eq!(input.gait, Gait::Sneak);
+                });
+            });
+
+            when("the sneak key is tapped twice", || {
+                tap_sneak(&mut app, player);
+                let input = tap_sneak(&mut app, player);
+
+                test("they go back to running", || {
+                    assert_eq!(input.gait, Gait::Run);
+                });
+            });
+
+            when("the sneak key stays down for several frames", || {
+                let first = tap_sneak(&mut app, player);
+                app.world_mut().run_schedule(Update);
+
+                test("it only counts once", || {
+                    assert_eq!(first.gait, Gait::Sneak);
+                    assert!(app.world().resource::<SneakToggle>().0);
+                });
+            });
+
+            when("they sprint while sneaking is on", || {
+                tap_sneak(&mut app, player);
+                let input = input_with(&mut app, player, KeyCode::ShiftLeft);
+
+                test("sprinting wins", || {
+                    assert_eq!(input.gait, Gait::Sprint);
                 });
             });
 

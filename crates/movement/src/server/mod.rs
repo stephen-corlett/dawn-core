@@ -1,7 +1,8 @@
 //! Authoritative movement. Nothing here touches networking, so these rules
 //! can be tested by placing inputs directly on entities.
 
-use crate::{Body, MoveInput, MovementConfig, PlayerPosition, Surface, VerticalSpeed, next_body};
+use crate::simulation::SimulatedBody;
+use crate::{MoveInput, MovementConfig, Surface};
 use bevy::prelude::*;
 use lightyear::prelude::input::native::ActionState;
 
@@ -22,42 +23,30 @@ fn apply_player_movement(
     time: Res<Time<Fixed>>,
     config: Res<MovementConfig>,
     surface: Res<Surface>,
-    mut players: Query<(
-        &mut PlayerPosition,
-        &mut VerticalSpeed,
-        &ActionState<MoveInput>,
-    )>,
+    mut players: Query<(SimulatedBody, &ActionState<MoveInput>)>,
 ) {
     let delta_secs = time.timestep().as_secs_f32();
-    for (mut position, mut vertical_speed, input) in &mut players {
-        let body = Body {
-            position: position.0,
-            vertical_speed: vertical_speed.0,
-        };
-        let next = next_body(body, input, delta_secs, &config, surface.0.as_ref());
-        // Writing only on change keeps idle players out of network updates.
-        if next.position != position.0 {
-            position.0 = next.position;
-        }
-        if next.vertical_speed != vertical_speed.0 {
-            vertical_speed.0 = next.vertical_speed;
-        }
+    for (mut body, input) in &mut players {
+        body.advance(input, delta_secs, &config, surface.0.as_ref());
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::FlatSurface;
+    use crate::{Dodge, FlatSurface, Gait, PlayerPosition, Sneaking, VerticalSpeed};
     use bdd::spec;
     use std::sync::Arc;
 
     const TICK_RATE_HZ: f64 = 20.0;
     const ONE_SECOND_OF_TICKS: u32 = 20;
     const CONFIG: MovementConfig = MovementConfig {
-        walk_speed: 2.0,
+        sneak_speed: 2.0,
         run_speed: 7.0,
         sprint_speed: 10.0,
+        dodge_speed: 12.0,
+        dodge_secs: 0.5,
+        dodge_cooldown_secs: 0.3,
         jump_speed: 8.0,
         gravity: 20.0,
         ground_snap: 0.5,
@@ -150,6 +139,41 @@ mod tests {
 
                 test("the idle player stays still", || {
                     assert_eq!(position_of(&app, idle), Vec3::ZERO);
+                });
+            });
+        });
+
+        given("a moving player holding dodge", || {
+            let mut app = test_app(CONFIG);
+            let roll = MoveInput {
+                forward: true,
+                dodge: true,
+                ..default()
+            };
+            let player = spawn_player(&mut app, roll);
+
+            when("one tick runs", || {
+                run_ticks(&mut app, 1);
+
+                test("the server starts the roll", || {
+                    assert!(app.world().get::<Dodge>(player).unwrap().is_rolling());
+                });
+            });
+        });
+
+        given("a player asking to sneak", || {
+            let mut app = test_app(CONFIG);
+            let sneak = MoveInput {
+                gait: Gait::Sneak,
+                ..default()
+            };
+            let player = spawn_player(&mut app, sneak);
+
+            when("one tick runs", || {
+                run_ticks(&mut app, 1);
+
+                test("the server marks them as sneaking", || {
+                    assert!(app.world().get::<Sneaking>(player).unwrap().0);
                 });
             });
         });

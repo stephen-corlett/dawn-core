@@ -113,6 +113,7 @@ fn read_keyboard(keys: Res<ButtonInput<KeyCode>>, mut inputs: Query<&mut ActionS
             left: keys.pressed(KeyCode::KeyA),
             right: keys.pressed(KeyCode::KeyD),
             jump: keys.pressed(KeyCode::Space),
+            dodge: keys.pressed(KeyCode::ControlLeft),
             gait: if keys.pressed(KeyCode::ShiftLeft) {
                 Gait::Sprint
             } else {
@@ -135,9 +136,12 @@ mod tests {
     use bdd::spec;
 
     const SLOW: MovementConfig = MovementConfig {
-        walk_speed: 0.5,
+        sneak_speed: 0.5,
         run_speed: 1.0,
         sprint_speed: 2.0,
+        dodge_speed: 3.0,
+        dodge_secs: 0.7,
+        dodge_cooldown_secs: 0.4,
         jump_speed: 7.0,
         gravity: 18.0,
         ground_snap: 0.4,

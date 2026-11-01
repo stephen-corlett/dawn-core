@@ -1,5 +1,5 @@
 //! Runs one character with the real movement rules, with no server or network. Move
-//! with WASD, sprint with Shift, walk with Control, jump with Space, and hold the right
+//! with WASD, sprint with Shift, roll with Control, hold C to sneak, jump with Space, and hold the right
 //! mouse button to look around. Run it with `just sandbox avatar`.
 
 use avatar::client::{
@@ -9,16 +9,19 @@ use bevy::prelude::*;
 use core::f32::consts::PI;
 use lightyear::prelude::Predicted;
 use movement::{
-    Body, FlatSurface, Gait, MoveHeading, MoveInput, MovementConfig, PlayerPosition, Surface,
-    VerticalSpeed, next_body,
+    Body, Dodge, FlatSurface, Gait, MoveHeading, MoveInput, MovementConfig, PlayerPosition,
+    Sneaking, Surface, VerticalSpeed, next_body,
 };
 use sandbox_kit::SandboxPlugin;
 use std::sync::Arc;
 
 const MOVEMENT: MovementConfig = MovementConfig {
-    walk_speed: 1.8,
+    sneak_speed: 1.5,
     run_speed: 5.4,
     sprint_speed: 8.2,
+    dodge_speed: 7.2,
+    dodge_secs: 0.7,
+    dodge_cooldown_secs: 0.4,
     jump_speed: 7.0,
     gravity: 18.0,
     ground_snap: 0.4,
@@ -54,17 +57,20 @@ fn main() {
                 library: "animations/UAL1_Standard.glb".into(),
                 clips: ClipIndices {
                     idle: 9,
-                    walk: 42,
+                    sneak_idle: 2,
+                    sneak: 1,
                     run: 13,
                     sprint: 36,
+                    roll: 27,
                     jump_start: 16,
                     falling: 15,
                     landing: 14,
                 },
-                walk_clip_speed: 0.97,
+                sneak_clip_speed: 0.75,
                 run_clip_speed: 5.36,
                 sprint_clip_speed: 8.25,
                 jump_rate: 2.0,
+                roll_rate: 2.1,
                 fade_secs: 0.15,
                 moving_speed: 0.3,
             },
@@ -98,7 +104,12 @@ fn move_player(
     keys: Res<ButtonInput<KeyCode>>,
     heading: Res<MoveHeading>,
     surface: Res<Surface>,
-    mut players: Query<(&mut PlayerPosition, &mut VerticalSpeed)>,
+    mut players: Query<(
+        &mut PlayerPosition,
+        &mut VerticalSpeed,
+        &mut Dodge,
+        &mut Sneaking,
+    )>,
 ) {
     let input = MoveInput {
         forward: keys.pressed(KeyCode::KeyW),
@@ -106,19 +117,22 @@ fn move_player(
         left: keys.pressed(KeyCode::KeyA),
         right: keys.pressed(KeyCode::KeyD),
         jump: keys.pressed(KeyCode::Space),
+        dodge: keys.pressed(KeyCode::ControlLeft),
         gait: if keys.pressed(KeyCode::ShiftLeft) {
             Gait::Sprint
-        } else if keys.pressed(KeyCode::ControlLeft) {
-            Gait::Walk
+        } else if keys.pressed(KeyCode::KeyC) {
+            Gait::Sneak
         } else {
             Gait::Run
         },
         yaw: heading.0,
     };
-    for (mut position, mut vertical_speed) in &mut players {
+    for (mut position, mut vertical_speed, mut dodge, mut sneaking) in &mut players {
         let body = Body {
             position: position.0,
             vertical_speed: vertical_speed.0,
+            dodge: *dodge,
+            sneaking: sneaking.0,
         };
         let next = next_body(
             body,
@@ -129,5 +143,7 @@ fn move_player(
         );
         position.0 = next.position;
         vertical_speed.0 = next.vertical_speed;
+        *dodge = next.dodge;
+        sneaking.0 = next.sneaking;
     }
 }
