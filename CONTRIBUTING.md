@@ -15,9 +15,10 @@ just dev
 1. Create a branch from `main`, such as `feat/quest-log` or `fix/rollback-snap`.
 2. Read [docs/architecture.md](docs/architecture.md) if your change adds a crate, adds
    a dependency between crates, or changes `foundation`.
-3. Write tests with `#[spec]` at the lowest level that shows the behavior.
-4. Run the checks below.
-5. Open a pull request into `main`.
+3. Read [docs/assets.md](docs/assets.md) if your change adds an asset.
+4. Write tests with `#[spec]` at the lowest level that shows the behavior.
+5. Run the checks below.
+6. Open a pull request into `main`.
 
 ## Before opening a pull request
 

@@ -36,6 +36,7 @@ The first build compiles the whole engine, so it takes a while.
 ## Layout
 
 ```text
+assets/          Game assets, stored with Git LFS
 crates/
   foundation/    Identifiers and settings used across the game
   protocol/      Registers every game module's network types
@@ -52,7 +53,8 @@ xtask/           Development launcher and project checks
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to make a change, and
-[docs/architecture.md](docs/architecture.md) for where new code belongs.
+[docs/architecture.md](docs/architecture.md) for where new code belongs, and
+[docs/assets.md](docs/assets.md) before adding an asset.
 AI coding agents should start with [AGENTS.md](AGENTS.md).
 
 ## Tests
