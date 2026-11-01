@@ -23,7 +23,7 @@ pub fn next_body(
     let ground = surface.ground_height(flat);
 
     let grounded = body.vertical_speed == 0.0 && body.position.y - ground <= config.ground_snap;
-    let jumping = grounded && input.jump && !dodge.is_rolling();
+    let jumping = grounded && input.jump && !dodge.is_committed();
     let vertical_speed = match (grounded, jumping) {
         (true, true) => config.jump_speed,
         (true, false) => 0.0,
@@ -44,8 +44,8 @@ pub fn next_body(
     }
 }
 
-/// Counts down any roll underway, and starts a new one if the player can. A roll needs
-/// a direction, so a player standing still can't start one.
+/// Counts down any roll or recovery underway, and starts a new roll if the player can.
+/// A roll needs a direction, so a player standing still can't start one.
 fn next_dodge(
     body: &Body,
     input: &MoveInput,
@@ -57,16 +57,22 @@ fn next_dodge(
     let direction = steering(input);
     let ground = surface.ground_height(body.position.xz());
     let on_ground = body.vertical_speed == 0.0 && body.position.y - ground <= config.ground_snap;
-    if input.dodge && on_ground && dodge.cooldown_secs <= 0.0 && direction != Vec2::ZERO {
+    if input.dodge && on_ground && !dodge.is_committed() && direction != Vec2::ZERO {
         return Dodge {
             direction,
             remaining_secs: config.dodge_secs,
-            cooldown_secs: config.dodge_secs + config.dodge_cooldown_secs,
+            recovery_secs: 0.0,
         };
     }
+    let remaining_secs = (dodge.remaining_secs - delta_secs).max(0.0);
+    let roll_just_ended = dodge.is_rolling() && remaining_secs == 0.0;
     Dodge {
-        remaining_secs: (dodge.remaining_secs - delta_secs).max(0.0),
-        cooldown_secs: (dodge.cooldown_secs - delta_secs).max(0.0),
+        remaining_secs,
+        recovery_secs: if roll_just_ended {
+            config.dodge_recovery_secs
+        } else {
+            (dodge.recovery_secs - delta_secs).max(0.0)
+        },
         ..dodge
     }
 }
@@ -82,6 +88,8 @@ fn travel_to(
 ) -> Vec2 {
     let velocity = if dodge.is_rolling() {
         dodge.direction * config.dodge_speed
+    } else if dodge.is_recovering() {
+        steering(input) * gait_speed(input.gait, config).min(config.dodge_recovery_speed)
     } else {
         steering(input) * gait_speed(input.gait, config)
     };
@@ -130,7 +138,8 @@ mod tests {
         sprint_speed: 16.0,
         dodge_speed: 12.0,
         dodge_secs: 0.5,
-        dodge_cooldown_secs: 0.3,
+        dodge_recovery_secs: 0.3,
+        dodge_recovery_speed: 1.0,
         jump_speed: 8.0,
         gravity: 20.0,
         ground_snap: 0.5,
@@ -544,6 +553,10 @@ mod tests {
                 test("the roll carries on", || {
                     assert!(moved.position.x > rolling.position.x);
                 });
+
+                test("recovery hasn't started yet", || {
+                    assert!(!moved.dodge.is_recovering());
+                });
             });
 
             when("they press jump", || {
@@ -591,12 +604,73 @@ mod tests {
             when("they press dodge straight away", || {
                 let moved = step(body, &press);
 
-                test("the cooldown stops them", || {
+                test("recovery stops them", || {
                     assert!(!moved.dodge.is_rolling());
                 });
             });
 
-            when("they wait out the cooldown", || {
+            when("they keep running", || {
+                let start = body.position.x;
+                let moved = step(body, &hold);
+
+                test("they move at recovery speed", || {
+                    let moved_by = moved.position.x - start;
+                    assert!((moved_by - CONFIG.dodge_recovery_speed * DELTA).abs() < 0.0001);
+                });
+            });
+
+            when("they try to sprint out of it", || {
+                let sprint = MoveInput {
+                    right: true,
+                    gait: Gait::Sprint,
+                    ..default()
+                };
+                let start = body.position.x;
+                let moved = step(body, &sprint);
+
+                test("sprinting doesn't help", || {
+                    let moved_by = moved.position.x - start;
+                    assert!((moved_by - CONFIG.dodge_recovery_speed * DELTA).abs() < 0.0001);
+                });
+            });
+
+            when("they try to jump out of it", || {
+                let jump = MoveInput {
+                    jump: true,
+                    ..default()
+                };
+                let moved = step(body, &jump);
+
+                test("they stay on the ground", || {
+                    assert_eq!(moved.vertical_speed, 0.0);
+                });
+            });
+
+            when("something forgives the roll", || {
+                body.dodge.recovery_secs = 0.0;
+                let start = body.position.x;
+                let moved = step(body, &hold);
+
+                test("they're back to full speed", || {
+                    let moved_by = moved.position.x - start;
+                    assert!((moved_by - CONFIG.run_speed * DELTA).abs() < 0.0001);
+                });
+            });
+
+            when("recovery runs out", || {
+                for _ in 0..5 {
+                    body = step(body, &hold);
+                }
+                let start = body.position.x;
+                let moved = step(body, &hold);
+
+                test("they're back to full speed", || {
+                    let moved_by = moved.position.x - start;
+                    assert!((moved_by - CONFIG.run_speed * DELTA).abs() < 0.0001);
+                });
+            });
+
+            when("they wait out recovery", || {
                 for _ in 0..5 {
                     body = step(body, &hold);
                 }

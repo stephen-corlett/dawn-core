@@ -34,8 +34,11 @@ pub struct MovementConfig {
     pub dodge_speed: f32,
     /// How long a dodge roll lasts.
     pub dodge_secs: f32,
-    /// How long after a dodge roll ends before the next one can start.
-    pub dodge_cooldown_secs: f32,
+    /// How long a player stays exposed after a dodge roll. They can't jump or roll again
+    /// until it's over.
+    pub dodge_recovery_secs: f32,
+    /// The fastest a player can move during recovery, whatever gait they ask for.
+    pub dodge_recovery_speed: f32,
     /// Upward speed at the start of a jump, in world units per second.
     pub jump_speed: f32,
     /// Downward acceleration in world units per second squared.
@@ -58,20 +61,31 @@ pub struct PlayerPosition(pub Vec3);
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
 pub struct VerticalSpeed(pub f32);
 
-/// An entity's dodge roll. While one is underway, it overrides the player's steering.
+/// An entity's dodge roll. The roll overrides the player's steering, and recovery slows
+/// them down afterward, so committing to a roll carries a risk. Anything that rewards a
+/// well-timed roll can end recovery early by clearing `recovery_secs`.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
 pub struct Dodge {
     /// Where the roll is heading on the XZ plane.
     pub direction: Vec2,
     /// How much of the roll is left.
     pub remaining_secs: f32,
-    /// How long until another roll can start.
-    pub cooldown_secs: f32,
+    /// How much of the recovery after a roll is left.
+    pub recovery_secs: f32,
 }
 
 impl Dodge {
     pub fn is_rolling(&self) -> bool {
         self.remaining_secs > 0.0
+    }
+
+    pub fn is_recovering(&self) -> bool {
+        self.recovery_secs > 0.0
+    }
+
+    /// Whether the player is tied up in a roll or the recovery from one.
+    pub fn is_committed(&self) -> bool {
+        self.is_rolling() || self.is_recovering()
     }
 }
 

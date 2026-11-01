@@ -26,7 +26,8 @@ pub(super) struct Stride {
     pub speed: f32,
     pub airborne: bool,
     pub rolling: bool,
-    pub sneaking: bool,
+    /// Low to the ground, either sneaking or getting up after a roll.
+    pub crouched: bool,
 }
 
 pub(super) struct MotionPlugin {
@@ -72,7 +73,7 @@ fn move_bodies(
         let ground = surface.0.ground_height(position.0.xz());
         stride.airborne = position.0.y - ground > config.airborne_height;
         stride.rolling = dodge.is_rolling();
-        stride.sneaking = sneaking.0;
+        stride.crouched = sneaking.0 || dodge.is_recovering();
 
         if let Some(facing) = facing(velocity, config.turn_speed) {
             transform
@@ -281,7 +282,7 @@ mod tests {
             *app.world_mut().get_mut::<Dodge>(body).unwrap() = Dodge {
                 direction: Vec2::X,
                 remaining_secs: 0.5,
-                cooldown_secs: 0.9,
+                recovery_secs: 0.0,
             };
 
             when("one frame runs", || {
@@ -301,8 +302,29 @@ mod tests {
             when("one frame runs", || {
                 run_frames(&mut app, 1);
 
-                test("it counts as sneaking", || {
-                    assert!(app.world().get::<Stride>(body).unwrap().sneaking);
+                test("it counts as crouched", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().crouched);
+                });
+            });
+        });
+
+        given("a body recovering from a roll", || {
+            let mut app = motion_app(FlatSurface);
+            let body = spawn_body(&mut app, Vec3::ZERO);
+            app.world_mut()
+                .get_mut::<Dodge>(body)
+                .unwrap()
+                .recovery_secs = 0.5;
+
+            when("one frame runs", || {
+                run_frames(&mut app, 1);
+
+                test("it counts as crouched", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().crouched);
+                });
+
+                test("it no longer counts as rolling", || {
+                    assert!(!app.world().get::<Stride>(body).unwrap().rolling);
                 });
             });
         });

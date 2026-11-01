@@ -225,7 +225,7 @@ fn next_pose(
 /// each clip plays nearest its natural rate.
 fn gait_pose(stride: &Stride, config: &AnimationConfig, movement: &MovementConfig) -> Pose {
     let moving = stride.speed >= config.moving_speed;
-    match (stride.sneaking, moving) {
+    match (stride.crouched, moving) {
         (true, true) => Pose::Sneak,
         (true, false) => Pose::SneakIdle,
         (false, false) => Pose::Idle,
@@ -259,7 +259,8 @@ mod tests {
         sprint_speed: 10.0,
         dodge_speed: 7.0,
         dodge_secs: 0.7,
-        dodge_cooldown_secs: 0.4,
+        dodge_recovery_secs: 0.6,
+        dodge_recovery_speed: 1.5,
         jump_speed: 7.0,
         gravity: 18.0,
         ground_snap: 0.4,
@@ -271,7 +272,7 @@ mod tests {
         speed: 0.0,
         airborne: true,
         rolling: false,
-        sneaking: false,
+        crouched: false,
     };
 
     fn config() -> AnimationConfig {
@@ -305,7 +306,7 @@ mod tests {
     fn sneaking(speed: f32) -> Stride {
         Stride {
             speed,
-            sneaking: true,
+            crouched: true,
             ..default()
         }
     }
@@ -314,7 +315,7 @@ mod tests {
         speed: 7.0,
         airborne: false,
         rolling: true,
-        sneaking: false,
+        crouched: false,
     };
 
     fn next(current: Pose, stride: &Stride, clip_finished: bool) -> Pose {
