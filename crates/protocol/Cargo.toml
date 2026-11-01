@@ -10,7 +10,11 @@ publish.workspace = true
 bevy.workspace = true
 foundation.workspace = true
 movement.workspace = true
+world.workspace = true
 lightyear.workspace = true
+
+[dev-dependencies]
+bdd.workspace = true
 
 [lints]
 workspace = true

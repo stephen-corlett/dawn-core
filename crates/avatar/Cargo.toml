@@ -1,0 +1,25 @@
+[package]
+name = "avatar"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+client = ["bevy/3d", "bevy/jpeg", "bevy/mouse"]
+
+[dependencies]
+bevy.workspace = true
+lightyear.workspace = true
+movement.workspace = true
+
+[dev-dependencies]
+bdd.workspace = true
+sandbox_kit.workspace = true
+
+[lints]
+workspace = true
+
+[[example]]
+name = "sandbox"
+required-features = ["client"]

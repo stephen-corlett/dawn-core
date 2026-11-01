@@ -11,6 +11,7 @@ publish.workspace = true
 dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
 [dependencies]
+avatar = { workspace = true, features = ["client"] }
 bevy = { workspace = true, features = ["default"] }
 clap.workspace = true
 dotenvy.workspace = true
@@ -19,6 +20,7 @@ foundation.workspace = true
 movement = { workspace = true, features = ["client"] }
 protocol.workspace = true
 lightyear.workspace = true
+world = { workspace = true, features = ["client"] }
 
 [dev-dependencies]
 bdd.workspace = true

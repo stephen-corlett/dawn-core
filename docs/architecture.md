@@ -179,6 +179,8 @@ Update this table whenever a game module is added or its dependencies change.
 | Game module | Type | Owns | Depends on |
 |---|---|---|---|
 | Movement | Supporting | Where a player is, and how input moves them | None |
+| World | Supporting | The ground, what grows on it, and what's solid | Movement |
+| Avatar | Supporting | What a player looks like, how their body moves, and how the camera frames them | Movement |
 
 ## What goes in `foundation`
 

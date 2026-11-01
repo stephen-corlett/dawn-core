@@ -8,17 +8,26 @@ const GROUND_COLOR: Color = Color::srgb(0.28, 0.42, 0.3);
 pub struct SandboxPlugin {
     pub title: String,
     pub ground_size: f32,
+    /// Where assets load from, relative to the crate being run.
+    pub asset_folder: String,
 }
 
 impl Plugin for SandboxPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: format!("Sandbox - {}", self.title),
-                ..default()
-            }),
-            ..default()
-        }));
+        app.add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: format!("Sandbox - {}", self.title),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    file_path: self.asset_folder.clone(),
+                    ..default()
+                }),
+        );
 
         let ground_size = self.ground_size;
         app.add_systems(

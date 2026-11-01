@@ -1,17 +1,19 @@
 //! Authoritative movement. Nothing here touches networking, so these rules
 //! can be tested by placing inputs directly on entities.
 
-use crate::{MoveInput, MovementConfig, PlayerPosition, next_position};
+use crate::{Body, MoveInput, MovementConfig, PlayerPosition, Surface, VerticalSpeed, next_body};
 use bevy::prelude::*;
 use lightyear::prelude::input::native::ActionState;
 
 pub struct MovementServerPlugin {
     pub config: MovementConfig,
+    pub surface: Surface,
 }
 
 impl Plugin for MovementServerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.config);
+        app.insert_resource(self.surface.clone());
         app.add_systems(FixedUpdate, apply_player_movement);
     }
 }
@@ -19,14 +21,26 @@ impl Plugin for MovementServerPlugin {
 fn apply_player_movement(
     time: Res<Time<Fixed>>,
     config: Res<MovementConfig>,
-    mut players: Query<(&mut PlayerPosition, &ActionState<MoveInput>)>,
+    surface: Res<Surface>,
+    mut players: Query<(
+        &mut PlayerPosition,
+        &mut VerticalSpeed,
+        &ActionState<MoveInput>,
+    )>,
 ) {
     let delta_secs = time.timestep().as_secs_f32();
-    for (mut position, input) in &mut players {
-        let next = next_position(position.0, input, delta_secs, &config);
+    for (mut position, mut vertical_speed, input) in &mut players {
+        let body = Body {
+            position: position.0,
+            vertical_speed: vertical_speed.0,
+        };
+        let next = next_body(body, input, delta_secs, &config, surface.0.as_ref());
         // Writing only on change keeps idle players out of network updates.
-        if next != position.0 {
-            position.0 = next;
+        if next.position != position.0 {
+            position.0 = next.position;
+        }
+        if next.vertical_speed != vertical_speed.0 {
+            vertical_speed.0 = next.vertical_speed;
         }
     }
 }
@@ -34,19 +48,30 @@ fn apply_player_movement(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::FlatSurface;
     use bdd::spec;
+    use std::sync::Arc;
 
     const TICK_RATE_HZ: f64 = 20.0;
     const ONE_SECOND_OF_TICKS: u32 = 20;
     const CONFIG: MovementConfig = MovementConfig {
-        speed: 7.0,
+        walk_speed: 2.0,
+        run_speed: 7.0,
+        sprint_speed: 10.0,
+        jump_speed: 8.0,
+        gravity: 20.0,
+        ground_snap: 0.5,
+        body_radius: 0.4,
         world_half_extent: 50.0,
     };
 
     fn test_app(config: MovementConfig) -> App {
         let mut app = App::new();
         app.insert_resource(Time::<Fixed>::from_hz(TICK_RATE_HZ));
-        app.add_plugins(MovementServerPlugin { config });
+        app.add_plugins(MovementServerPlugin {
+            config,
+            surface: Surface(Arc::new(FlatSurface)),
+        });
         app
     }
 
@@ -81,14 +106,14 @@ mod tests {
 
                 test("the player has moved the configured speed", || {
                     let moved = position_of(&app, player).length();
-                    assert!((moved - CONFIG.speed).abs() < 0.001, "moved {moved}");
+                    assert!((moved - CONFIG.run_speed).abs() < 0.001, "moved {moved}");
                 });
             });
         });
 
         given("a plugin configured with double the speed", || {
             let mut app = test_app(MovementConfig {
-                speed: 14.0,
+                run_speed: 14.0,
                 ..CONFIG
             });
             let forward = MoveInput {
@@ -125,6 +150,28 @@ mod tests {
 
                 test("the idle player stays still", || {
                     assert_eq!(position_of(&app, idle), Vec3::ZERO);
+                });
+            });
+        });
+
+        given("a player holding jump", || {
+            let mut app = test_app(CONFIG);
+            let jump = MoveInput {
+                jump: true,
+                ..default()
+            };
+            let player = spawn_player(&mut app, jump);
+
+            when("one tick runs", || {
+                run_ticks(&mut app, 1);
+
+                test("the player is rising", || {
+                    let speed = app.world().get::<VerticalSpeed>(player).unwrap().0;
+                    assert_eq!(speed, CONFIG.jump_speed);
+                });
+
+                test("the player has left the ground", || {
+                    assert!(position_of(&app, player).y > 0.0);
                 });
             });
         });

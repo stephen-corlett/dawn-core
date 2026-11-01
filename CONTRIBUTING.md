@@ -31,8 +31,8 @@ You can change movement speed without restarting or recompiling:
    ```
 
 2. Open [crates/movement/assets/sandbox_tuning.ron](crates/movement/assets/sandbox_tuning.ron).
-3. Change `speed` and save the file. Within about a second, the terminal prints
-   `Applied movement tuning`, and the capsule moves at the new speed.
+3. Change a speed such as `run_speed` and save the file. Within about a second, the
+   terminal prints `Applied movement tuning`, and the capsule moves at the new speed.
 
 - **Mistakes in the file:** The terminal shows the line and column of the error, and the
   sandbox keeps the last good values. Fix the file and save it again.

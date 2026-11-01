@@ -12,8 +12,9 @@ use config::ServerConfig;
 use core::time::Duration;
 use foundation::net::tick_duration;
 use lightyear::prelude::server::ServerPlugins;
+use movement::Surface;
 use movement::server::MovementServerPlugin;
-use protocol::{ProtocolPlugin, movement_config};
+use protocol::{ProtocolPlugin, forest, movement_config};
 
 /// How long the main loop sleeps between updates, so an idle server doesn't
 /// spin a CPU core.
@@ -32,9 +33,11 @@ pub fn build_app(config: ServerConfig) -> App {
         tick_duration: tick_duration(),
     });
     app.add_plugins(ProtocolPlugin);
+    let movement = movement_config();
     app.add_plugins((
         MovementServerPlugin {
-            config: movement_config(),
+            config: movement,
+            surface: Surface(forest(&movement)),
         },
         network::ServerNetworkPlugin { config },
     ));
