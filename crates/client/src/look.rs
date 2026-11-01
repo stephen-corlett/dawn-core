@@ -95,7 +95,7 @@ pub fn avatar_plugin() -> AvatarClientPlugin {
             walk_below: 0.5,
             sprint_above: 1.1,
             jump_rate: 2.0,
-            lunge_rate: 1.62,
+            lunge_rate: 1.3,
             rollout_rate: 0.64,
             fade_secs: 0.15,
             moving_speed: 0.3,

@@ -27,7 +27,7 @@ pub fn movement_config() -> MovementConfig {
         run_speed: 5.4,
         sprint_speed: 8.2,
         dodge_lunge_speed: 9.0,
-        dodge_lunge_secs: 0.4,
+        dodge_lunge_secs: 0.5,
         dodge_rollout_speed: 1.7,
         dodge_rollout_secs: 0.55,
         dodge_recovery_secs: 0.3,
