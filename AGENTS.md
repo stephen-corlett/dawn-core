@@ -49,10 +49,18 @@ used:
 | `just check` | Run formatting, architecture, lint, and isolated-build checks |
 | `just test` | Run every test |
 | `just coverage` | Fail if tests cover under 90% of changed lines, and list the gaps |
+| `just upgrade-status` | Show whether a newer Bevy is published and our dependencies support it |
 
 Run `just check`, `just test`, and `just coverage` before you call work finished. If
 coverage reports lines, add tests at the suggested level unless a different level
 fits the behavior better.
+
+## Upgrading Bevy
+
+Follow [.agents/skills/upgrade-bevy/SKILL.md](.agents/skills/upgrade-bevy/SKILL.md) to
+upgrade Bevy or lightyear. Skills live in `.agents/skills/`, the location shared across
+agents. Claude Code doesn't list that folder, so each skill also has a short pointer
+in `.claude/skills/`, the same way `CLAUDE.md` points to this file.
 
 ## Testing
 
