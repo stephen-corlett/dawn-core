@@ -20,6 +20,33 @@ just dev
 5. Run the checks below.
 6. Open a pull request into `main`.
 
+## Changing movement tuning while the sandbox runs
+
+You can change movement speed without restarting or recompiling:
+
+1. Start the sandbox:
+
+   ```bash
+   just sandbox movement
+   ```
+
+2. Open [crates/movement/assets/sandbox_tuning.ron](crates/movement/assets/sandbox_tuning.ron).
+3. Change `speed` and save the file. Within about a second, the terminal prints
+   `Applied movement tuning`, and the capsule moves at the new speed.
+
+- **Mistakes in the file:** The terminal shows the line and column of the error, and the
+  sandbox keeps the last good values. Fix the file and save it again.
+- **Restarting:** The sandbox starts from whatever the file says, so a change stays
+  until you edit it again. A broken file stops it from starting.
+- **World size:** `world_half_extent` also applies live, but the ground keeps its size
+  until you restart.
+- **Other code:** This only covers the tuning file. Rust changes still need a restart,
+  and `just dev` doesn't read this file. It takes its values from
+  `movement_config()` in `crates/protocol/src/lib.rs`.
+
+This relies on Bevy's `file_watcher` feature, which `just sandbox` turns on through
+`sandbox_kit/dev`. Plain `cargo run` reads the file once, at startup.
+
 ## Before opening a pull request
 
 ```bash
