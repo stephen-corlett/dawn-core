@@ -18,21 +18,38 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Each entry compiles something different, so each keeps its own cache. A shared key
+  # would only save whichever entry finished first.
   build:
-    name: Build
+    name: Build (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Lint restores this cache.
+          - name: Check
+            cache-key: check
+            run: cargo check --workspace --all-targets
+          # Checks every crate alone, which needs its own Bevy feature sets.
+          - name: Isolated crates
+            cache-key: isolated
+            run: cargo xtask check-isolated
+          # Test restores this cache. The filter compiles everything and runs nothing.
+          - name: Coverage
+            cache-key: coverage
+            run: cargo llvm-cov nextest --no-report --workspace --exclude xtask --filterset 'none()' --no-tests=pass
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
+          cache-key: ${{ matrix.cache-key }}
           save-cache: "true"
       - uses: taiki-e/install-action@nextest
+        if: matrix.cache-key == 'coverage'
       - uses: taiki-e/install-action@cargo-llvm-cov
-      # Lint reuses this output.
-      - run: cargo check --workspace --all-targets
-      # Test reuses this instrumented build. The filter compiles everything and runs
-      # nothing.
-      - run: cargo llvm-cov nextest --no-report --workspace --exclude xtask --filterset 'none()' --no-tests=pass
+        if: matrix.cache-key == 'coverage'
+      - run: ${{ matrix.run }}
 
   lint:
     name: Lint
@@ -42,12 +59,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          cache-key: check
       - run: cargo fmt --all --check
       - run: cargo xtask check-architecture
       - run: cargo xtask check-app-sides
       - run: cargo xtask check-tests
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo xtask check-isolated
 
   # Every test runs once, using the same instrumented build. End-to-end tests run
   # separately so they don't count toward changed line coverage.
@@ -65,6 +83,8 @@ jobs:
           # Changed line coverage compares against the pull request's base branch.
           fetch-depth: 0
       - uses: ./.github/actions/setup
+        with:
+          cache-key: coverage
       - uses: taiki-e/install-action@nextest
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Unit and integration tests with changed line coverage
