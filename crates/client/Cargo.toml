@@ -6,8 +6,9 @@ rust-version.workspace = true
 publish.workspace = true
 
 [features]
-# Faster rebuilds during development. Never ship a build with this enabled.
-dev = ["bevy/dynamic_linking"]
+# Faster rebuilds and live asset reloads during development. Never ship a build with
+# this enabled.
+dev = ["bevy/dynamic_linking", "bevy/file_watcher"]
 
 [dependencies]
 bevy = { workspace = true, features = ["default"] }

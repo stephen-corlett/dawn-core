@@ -127,7 +127,56 @@ Tests can't judge rendering or how the game feels. If you can't run the game you
 say so. List `just dev` and `just sandbox movement` under Manual checks in the pull
 request, and include what to look for, based on the silent changes.
 
-## 7. Open the pull request
+## 7. Recheck hotpatching
+
+Hotpatching changes code while the game runs. It doesn't work on this project yet, but
+a new Bevy or `dx`, the Dioxus CLI, could change that. Keep this check out of the
+upgrade itself, and undo every change it needs.
+
+The last test used Bevy 0.20, with `subsecond` and `dx` both at 0.7.10. Three things
+need to work, and the last two failed:
+
+- **Launching:** `dx` can't use `rust-lld.exe` as the linker on Windows, and
+  `bevy/dynamic_linking` can't be combined with patching. Use the setup below.
+- **Rebuilding:** With the full workspace, every edit failed with
+  `Missing rustc args for replay`, because `dx` tried to rebuild crates the sandbox
+  doesn't use.
+- **Patching library code:** With a reduced workspace, edits to `sandbox.rs` applied, but
+  edits to `crates/movement/src/` were ignored even though `dx` reported success.
+
+To check for a change:
+
+1. Temporarily add `hotpatching = ["bevy/hotpatching"]` to the `[features]` of
+   `libs/sandbox_kit/Cargo.toml`, and run `cargo metadata --format-version 1`. Read the
+   `subsecond` version from `Cargo.lock`. `dx` must be the same version.
+2. Run `cargo info dioxus-cli`. If no stable release of that version exists, or it isn't
+   newer than the last test, undo the change and go to step 8.
+3. Ask the user before installing or updating `dx`:
+
+   ```bash
+   cargo install dioxus-cli --version <subsecond version> --locked --features disable-telemetry
+   ```
+
+4. Copy `rust-lld.exe` from `lib/rustlib/x86_64-pc-windows-msvc/bin` in the toolchain to
+   a folder under `target/`, named `lld-link.exe`. Set
+   `CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER` to that copy for this command only.
+   Don't change `.cargo/config.toml`.
+5. Run the sandbox. Leaving out `sandbox_kit/dev` links Bevy statically:
+
+   ```bash
+   dx serve --hot-patch --windows -p movement --example sandbox --features "server sandbox_kit/hotpatching"
+   ```
+
+6. While it runs, add a log line inside `apply_player_movement` in
+   `crates/movement/src/server/mod.rs`. It only passes if the line appears and the game's
+   process ID stays the same. `dx` reporting `Hot-patching` isn't proof.
+7. Stop `dx` with `Ctrl+C`, and check that no `dx` or `sandbox` process is left running.
+   Force-killing `dx` leaves the game open. Then undo every change from this step.
+
+Say in the pull request what you found. If it passed, don't add hotpatching here.
+Suggest it to the user as a separate change.
+
+## 8. Open the pull request
 
 Follow "Pull requests" in `AGENTS.md`. Use a title such as
 `build(deps): upgrade Bevy to 0.N and lightyear to 0.M`. In the description, include:
@@ -135,8 +184,9 @@ Follow "Pull requests" in `AGENTS.md`. Use a title such as
 - The old and new versions of Bevy, lightyear, and Rust.
 - The migration guide entries that applied.
 - Every silent change, and how you handled it.
-- Under Notes for reviewers, that the first CI run will be slow, because the new
-  `Cargo.lock` means dependencies are rebuilt rather than restored from the cache.
+- Under Notes for reviewers, the hotpatching result, and that the first CI run will be
+  slow, because the new `Cargo.lock` means dependencies are rebuilt rather than restored
+  from the cache.
 
 Don't merge the pull request or enable auto-merge. Merging is the owner's decision.
 
