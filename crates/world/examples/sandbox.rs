@@ -62,6 +62,8 @@ fn main() {
                 fog_start: 30.0,
                 fog_end: 120.0,
                 shadow_distance: 90.0,
+                shadow_cascades: 2,
+                shadow_resolution: 1024,
                 saturation: 0.85,
                 glow: 0.1,
             },
@@ -71,10 +73,10 @@ fn main() {
                 dirt: Color::srgb(0.62, 0.45, 0.33),
             },
             ground_texture: GroundTexture {
-                color: "ground/Ground037_Color.jpg".into(),
-                normal: "ground/Ground037_NormalGL.jpg".into(),
-                roughness: "ground/Ground037_Roughness.jpg".into(),
-                tile_size: 5.0,
+                color: "ground/Painted_Ground_Color.jpg".into(),
+                normal: "ground/Flat_Normal.jpg".into(),
+                roughness: "ground/Painted_Ground_Roughness.jpg".into(),
+                tile_size: 8.0,
             },
         })
         .run();
