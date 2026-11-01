@@ -2,7 +2,8 @@
 //! camera. The game modules know how to draw these, and this is what they're told to draw.
 
 use avatar::client::{
-    AnimationConfig, AppearanceConfig, AvatarClientPlugin, CameraConfig, ClipIndices, MotionConfig,
+    AnimationConfig, AppearanceConfig, AvatarClientPlugin, CameraConfig, ClipIndices, GaitClip,
+    MotionConfig,
 };
 use bevy::prelude::*;
 use core::f32::consts::PI;
@@ -61,17 +62,41 @@ pub fn avatar_plugin() -> AvatarClientPlugin {
             library: ANIMATION_LIBRARY.into(),
             clips: ClipIndices {
                 idle: 9,
+                sneak_idle: 2,
+                sneak: 1,
                 walk: 42,
                 run: 13,
                 sprint: 36,
+                roll: 27,
                 jump_start: 16,
                 falling: 15,
                 landing: 14,
             },
-            walk_clip_speed: 0.97,
-            run_clip_speed: 5.36,
-            sprint_clip_speed: 8.25,
+            sneak_clip: GaitClip {
+                speed: 0.75,
+                slowest_rate: 0.5,
+                fastest_rate: 2.0,
+            },
+            walk_clip: GaitClip {
+                speed: 0.97,
+                slowest_rate: 0.5,
+                fastest_rate: 2.0,
+            },
+            run_clip: GaitClip {
+                speed: 5.36,
+                slowest_rate: 0.5,
+                fastest_rate: 1.2,
+            },
+            sprint_clip: GaitClip {
+                speed: 8.25,
+                slowest_rate: 0.8,
+                fastest_rate: 1.25,
+            },
+            walk_below: 0.5,
+            sprint_above: 1.1,
             jump_rate: 2.0,
+            lunge_rate: 1.3,
+            rollout_rate: 0.64,
             fade_secs: 0.15,
             moving_speed: 0.3,
         },
@@ -100,6 +125,10 @@ mod tests {
     use protocol::{forest, movement_config};
     use std::path::Path;
 
+    /// How far into the roll clip its feet stop travelling. The rest is the body standing
+    /// up on the spot, so a moving roll has to hand over to a gait by here.
+    const ROLL_CLIP_TRAVEL_SECS: f32 = 1.0;
+
     #[spec]
     fn the_games_look() {
         given("this game's plugins", || {
@@ -125,6 +154,23 @@ mod tests {
                 test("the distance fades into the sky", || {
                     assert_eq!(fog, world.mood.sky);
                 });
+            });
+
+            when("the roll's timing is compared with its clip", || {
+                let movement = movement_config();
+                let animation = &avatar.animation;
+                let clip_secs = movement.dodge_lunge_secs * animation.lunge_rate
+                    + movement.dodge_rollout_secs * animation.rollout_rate;
+
+                test(
+                    "the roll ends where the clip's feet stop travelling",
+                    || {
+                        assert!(
+                            (clip_secs - ROLL_CLIP_TRAVEL_SECS).abs() < 0.05,
+                            "the roll reaches {clip_secs} seconds into the clip"
+                        );
+                    },
+                );
             });
 
             when("the camera's limits are inspected", || {

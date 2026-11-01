@@ -10,6 +10,8 @@ pub mod client;
 mod rules;
 #[cfg(feature = "server")]
 pub mod server;
+#[cfg(any(feature = "client", feature = "server"))]
+mod simulation;
 mod surface;
 
 pub use rules::{Body, next_body};
@@ -25,9 +27,22 @@ use serde::{Deserialize, Serialize};
 #[derive(Resource, Clone, Copy, Debug, PartialEq, Deserialize)]
 pub struct MovementConfig {
     /// Speed of each [`Gait`], in world units per second.
-    pub walk_speed: f32,
+    pub sneak_speed: f32,
     pub run_speed: f32,
     pub sprint_speed: f32,
+    /// Speed during the lunge that opens a dodge roll, in world units per second.
+    pub dodge_lunge_speed: f32,
+    /// How long the lunge lasts.
+    pub dodge_lunge_secs: f32,
+    /// Speed once the player hits the ground and rolls out, in world units per second.
+    pub dodge_rollout_speed: f32,
+    /// How long the roll-out lasts.
+    pub dodge_rollout_secs: f32,
+    /// How long a player stays exposed after a dodge roll. They can't jump or roll again
+    /// until it's over.
+    pub dodge_recovery_secs: f32,
+    /// The fastest a player can move during recovery, whatever gait they ask for.
+    pub dodge_recovery_speed: f32,
     /// Upward speed at the start of a jump, in world units per second.
     pub jump_speed: f32,
     /// Downward acceleration in world units per second squared.
@@ -43,12 +58,50 @@ pub struct MovementConfig {
 
 /// An entity's position in the world. The server owns the true value.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
-#[require(VerticalSpeed)]
+#[require(VerticalSpeed, Dodge, Sneaking)]
 pub struct PlayerPosition(pub Vec3);
 
 /// How fast an entity is rising or falling. It's zero while standing on the ground.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
 pub struct VerticalSpeed(pub f32);
+
+/// An entity's dodge roll: a fast lunge, a slow roll-out, and then a slowed recovery. The
+/// player can't steer until recovery, so committing to a roll carries a risk. Anything
+/// that rewards a well-timed roll can end recovery early by clearing `recovery_secs`.
+#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
+pub struct Dodge {
+    /// Where the roll is heading on the XZ plane.
+    pub direction: Vec2,
+    /// How much of the roll is left.
+    pub remaining_secs: f32,
+    /// How much of the recovery after a roll is left.
+    pub recovery_secs: f32,
+}
+
+impl Dodge {
+    pub fn is_rolling(&self) -> bool {
+        self.remaining_secs > 0.0
+    }
+
+    pub fn is_recovering(&self) -> bool {
+        self.recovery_secs > 0.0
+    }
+
+    /// Whether a roll has hit the ground and is carrying on at its slower speed.
+    pub fn is_rolling_out(&self, config: &MovementConfig) -> bool {
+        self.is_rolling() && self.remaining_secs <= config.dodge_rollout_secs
+    }
+
+    /// Whether the player is tied up in a roll or the recovery from one.
+    pub fn is_committed(&self) -> bool {
+        self.is_rolling() || self.is_recovering()
+    }
+}
+
+/// Whether an entity is moving in a crouch. Nothing about its position shows this, so
+/// other players need it sent to them.
+#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect, Default)]
+pub struct Sneaking(pub bool);
 
 /// The direction "forward" points for local input, as radians around the up axis.
 /// Whatever frames the player, such as a camera, keeps this up to date.
@@ -72,6 +125,7 @@ pub struct MoveInput {
     pub left: bool,
     pub right: bool,
     pub jump: bool,
+    pub dodge: bool,
     pub gait: Gait,
     /// The direction `forward` points, as radians around the up axis. Zero faces
     /// negative Z. Clients choose this, so the rules can't trust it to be a number.
@@ -81,7 +135,7 @@ pub struct MoveInput {
 /// How fast a player is asking to move.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Eq, Reflect)]
 pub enum Gait {
-    Walk,
+    Sneak,
     #[default]
     Run,
     Sprint,
@@ -103,5 +157,7 @@ impl Plugin for MovementProtocolPlugin {
             .predict()
             .add_linear_interpolation();
         app.component::<VerticalSpeed>().replicate().predict();
+        app.component::<Dodge>().replicate().predict();
+        app.component::<Sneaking>().replicate().predict();
     }
 }

@@ -5,7 +5,7 @@ use super::AvatarSystems;
 use super::appearance::Avatar;
 use bevy::math::ops;
 use bevy::prelude::*;
-use movement::{PlayerPosition, Surface};
+use movement::{Dodge, MovementConfig, PlayerPosition, Sneaking, Surface};
 
 /// How a body follows its simulated position. Higher smoothing values follow more tightly.
 #[derive(Resource, Clone, Copy, Debug, PartialEq)]
@@ -25,6 +25,10 @@ pub(super) struct Stride {
     /// Speed across the ground, in world units per second.
     pub speed: f32,
     pub airborne: bool,
+    pub rolling: bool,
+    pub rolling_out: bool,
+    pub recovering: bool,
+    pub sneaking: bool,
 }
 
 pub(super) struct MotionPlugin {
@@ -41,14 +45,24 @@ impl Plugin for MotionPlugin {
 fn move_bodies(
     time: Res<Time>,
     config: Res<MotionConfig>,
+    movement: Res<MovementConfig>,
     surface: Res<Surface>,
-    mut bodies: Query<(&PlayerPosition, &mut Transform, &mut Stride), With<Avatar>>,
+    mut bodies: Query<
+        (
+            &PlayerPosition,
+            &Dodge,
+            &Sneaking,
+            &mut Transform,
+            &mut Stride,
+        ),
+        With<Avatar>,
+    >,
 ) {
     let delta_secs = time.delta_secs();
     if delta_secs <= 0.0 {
         return;
     }
-    for (position, mut transform, mut stride) in &mut bodies {
+    for (position, dodge, sneaking, mut transform, mut stride) in &mut bodies {
         let before = transform.translation;
         transform
             .translation
@@ -60,6 +74,10 @@ fn move_bodies(
             .smooth_nudge(&velocity.length(), config.speed_smoothing, delta_secs);
         let ground = surface.0.ground_height(position.0.xz());
         stride.airborne = position.0.y - ground > config.airborne_height;
+        stride.rolling = dodge.is_rolling();
+        stride.rolling_out = dodge.is_rolling_out(&movement);
+        stride.recovering = dodge.is_recovering();
+        stride.sneaking = sneaking.0;
 
         if let Some(facing) = facing(velocity, config.turn_speed) {
             transform
@@ -110,6 +128,22 @@ mod tests {
     fn motion_app(surface: impl WalkSurface) -> App {
         let mut app = App::new();
         app.add_plugins(MotionPlugin { config: CONFIG });
+        app.insert_resource(MovementConfig {
+            sneak_speed: 2.0,
+            run_speed: 6.0,
+            sprint_speed: 10.0,
+            dodge_lunge_speed: 7.0,
+            dodge_lunge_secs: 0.4,
+            dodge_rollout_speed: 2.0,
+            dodge_rollout_secs: 0.3,
+            dodge_recovery_secs: 0.6,
+            dodge_recovery_speed: 1.5,
+            jump_speed: 7.0,
+            gravity: 18.0,
+            ground_snap: 0.4,
+            body_radius: 0.4,
+            world_half_extent: 30.0,
+        });
         app.insert_resource(Surface(Arc::new(surface)));
         app.insert_resource(Time::<()>::default());
         app
@@ -258,6 +292,84 @@ mod tests {
 
                 test("it counts as airborne", || {
                     assert!(app.world().get::<Stride>(body).unwrap().airborne);
+                });
+            });
+        });
+
+        given("a body in the middle of a roll", || {
+            let mut app = motion_app(FlatSurface);
+            let body = spawn_body(&mut app, Vec3::ZERO);
+            *app.world_mut().get_mut::<Dodge>(body).unwrap() = Dodge {
+                direction: Vec2::X,
+                remaining_secs: 0.5,
+                recovery_secs: 0.0,
+            };
+
+            when("one frame runs", || {
+                run_frames(&mut app, 1);
+
+                test("it counts as rolling", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().rolling);
+                });
+
+                test("it's still lunging", || {
+                    assert!(!app.world().get::<Stride>(body).unwrap().rolling_out);
+                });
+            });
+        });
+
+        given("a body near the end of a roll", || {
+            let mut app = motion_app(FlatSurface);
+            let body = spawn_body(&mut app, Vec3::ZERO);
+            app.world_mut()
+                .get_mut::<Dodge>(body)
+                .unwrap()
+                .remaining_secs = 0.1;
+
+            when("one frame runs", || {
+                run_frames(&mut app, 1);
+
+                test("it counts as rolling out", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().rolling_out);
+                });
+            });
+        });
+
+        given("a sneaking body", || {
+            let mut app = motion_app(FlatSurface);
+            let body = spawn_body(&mut app, Vec3::ZERO);
+            app.world_mut().get_mut::<Sneaking>(body).unwrap().0 = true;
+
+            when("one frame runs", || {
+                run_frames(&mut app, 1);
+
+                test("it counts as sneaking", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().sneaking);
+                });
+            });
+        });
+
+        given("a body recovering from a roll", || {
+            let mut app = motion_app(FlatSurface);
+            let body = spawn_body(&mut app, Vec3::ZERO);
+            app.world_mut()
+                .get_mut::<Dodge>(body)
+                .unwrap()
+                .recovery_secs = 0.5;
+
+            when("one frame runs", || {
+                run_frames(&mut app, 1);
+
+                test("it counts as recovering", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().recovering);
+                });
+
+                test("it doesn't count as sneaking", || {
+                    assert!(!app.world().get::<Stride>(body).unwrap().sneaking);
+                });
+
+                test("it no longer counts as rolling", || {
+                    assert!(!app.world().get::<Stride>(body).unwrap().rolling);
                 });
             });
         });

@@ -134,12 +134,18 @@ fn connect_node(
 #[cfg(test)]
 mod tests {
     use super::super::animation::AnimationPlugin;
-    use super::super::{AnimationConfig, ClipIndices};
+    use super::super::{AnimationConfig, ClipIndices, GaitClip};
     use super::*;
     use bdd::spec;
     use bevy::ecs::system::RunSystemOnce;
     use core::f32::consts::PI;
     use movement::MovementConfig;
+
+    const GAIT_CLIP: GaitClip = GaitClip {
+        speed: 1.0,
+        slowest_rate: 0.5,
+        fastest_rate: 2.0,
+    };
 
     fn appearance_app() -> App {
         let mut app = App::new();
@@ -148,9 +154,15 @@ mod tests {
         app.init_asset::<AnimationGraph>();
         app.init_asset::<WorldAsset>();
         app.insert_resource(MovementConfig {
-            walk_speed: 2.0,
+            sneak_speed: 2.0,
             run_speed: 6.0,
             sprint_speed: 10.0,
+            dodge_lunge_speed: 7.0,
+            dodge_lunge_secs: 0.4,
+            dodge_rollout_speed: 2.0,
+            dodge_rollout_secs: 0.3,
+            dodge_recovery_secs: 0.6,
+            dodge_recovery_speed: 1.5,
             jump_speed: 7.0,
             gravity: 18.0,
             ground_snap: 0.4,
@@ -162,17 +174,25 @@ mod tests {
                 library: "clips.glb".into(),
                 clips: ClipIndices {
                     idle: 0,
-                    walk: 1,
+                    sneak_idle: 7,
+                    sneak: 1,
+                    walk: 9,
                     run: 2,
                     sprint: 3,
+                    roll: 8,
                     jump_start: 4,
                     falling: 5,
                     landing: 6,
                 },
-                walk_clip_speed: 1.0,
-                run_clip_speed: 6.0,
-                sprint_clip_speed: 8.0,
+                sneak_clip: GAIT_CLIP,
+                walk_clip: GAIT_CLIP,
+                run_clip: GAIT_CLIP,
+                sprint_clip: GAIT_CLIP,
+                walk_below: 0.5,
+                sprint_above: 1.1,
                 jump_rate: 2.0,
+                lunge_rate: 2.5,
+                rollout_rate: 1.5,
                 fade_secs: 0.1,
                 moving_speed: 0.3,
             },

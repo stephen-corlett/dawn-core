@@ -1,6 +1,7 @@
 //! A minimal 3D scene for trying a Bevy plugin on its own: a window, a square of
 //! ground, lighting, and a camera.
 
+use bevy::gilrs::GilrsPlugin;
 use bevy::prelude::*;
 
 const GROUND_COLOR: Color = Color::srgb(0.28, 0.42, 0.3);
@@ -26,7 +27,8 @@ impl Plugin for SandboxPlugin {
                 .set(AssetPlugin {
                     file_path: self.asset_folder.clone(),
                     ..default()
-                }),
+                })
+                .disable::<GilrsPlugin>(),
         );
 
         let ground_size = self.ground_size;

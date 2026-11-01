@@ -1,9 +1,15 @@
 // Movement tuning for `just sandbox movement`. Save this file while the sandbox runs
 // to apply it. The ground keeps its size until the sandbox restarts.
 (
-    walk_speed: 1.8,
+    sneak_speed: 1.5,
     run_speed: 5.4,
     sprint_speed: 8.2,
+    dodge_lunge_speed: 9.0,
+    dodge_lunge_secs: 0.5,
+    dodge_rollout_speed: 1.7,
+    dodge_rollout_secs: 0.55,
+    dodge_recovery_secs: 0.3,
+    dodge_recovery_speed: 1.5,
     jump_speed: 7.0,
     gravity: 18.0,
     ground_snap: 0.4,

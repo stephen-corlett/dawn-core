@@ -23,13 +23,56 @@ impl Plugin for ProtocolPlugin {
 
 pub fn movement_config() -> MovementConfig {
     MovementConfig {
-        walk_speed: 1.8,
+        sneak_speed: 1.5,
         run_speed: 5.4,
         sprint_speed: 8.2,
+        dodge_lunge_speed: 9.0,
+        dodge_lunge_secs: 0.5,
+        dodge_rollout_speed: 1.7,
+        dodge_rollout_secs: 0.55,
+        dodge_recovery_secs: 0.3,
+        dodge_recovery_speed: 1.5,
         jump_speed: 7.0,
         gravity: 18.0,
         ground_snap: 0.4,
         body_radius: 0.4,
         world_half_extent: 50.0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bdd::spec;
+
+    #[spec]
+    fn dodge_tuning() {
+        given("this game's movement tuning", || {
+            let config = movement_config();
+
+            when("a roll is compared with running away", || {
+                let (lunge, sprint) = (config.dodge_lunge_speed, config.sprint_speed);
+
+                test("a lunge outruns a sprint", || {
+                    assert!(lunge > sprint);
+                });
+            });
+
+            when("the two halves of a roll are compared", || {
+                let (lunge, rollout) = (config.dodge_lunge_speed, config.dodge_rollout_speed);
+
+                test("the roll-out covers far less ground", || {
+                    assert!(rollout < lunge / 2.0);
+                });
+            });
+
+            when("recovery is compared with normal movement", || {
+                let recovery = config.dodge_recovery_speed;
+
+                test("recovery is much slower than running", || {
+                    assert!(recovery < config.run_speed / 2.0);
+                });
+            });
+        });
     }
 }
