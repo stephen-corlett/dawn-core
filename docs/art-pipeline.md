@@ -95,8 +95,8 @@ are two different processes:
 ## Our process
 
 We're a small team, so these are roles, not people. The human is the art director and has final
-sign-off. The agent does technical art and integration, and doesn't author art, because
-`docs/assets.md` rules out AI-generated assets.
+sign-off. The agent does technical art and integration, and can generate textures under the rules
+in `docs/assets.md`. It never decides what looks right.
 
 ### Look lock, once per style
 
@@ -246,8 +246,9 @@ those instead, such as `just lookdev --capture ../shots nature/Fern_1.gltf`.
 - **The merged look isn't the baseline.** The photo-scanned ground, white sun, and higher
   saturation from pull request 19 came before this process. So did the look before it. The look
   lock compares them, and keeps neither by default.
-- **Art supply may limit the style.** Two of the three approved libraries are mainly realistic
-  materials, and agents don't author art. A hand-painted look may need a new library or an artist.
+- **Generated textures are untested here.** Two of the three approved libraries are mainly
+  realistic materials, so painted textures are planned to come from a local image model. Nothing
+  has proven yet that it can reach the look, or keep a set of textures consistent.
 - **The sky hasn't been judged.** Bevy's atmosphere is physically based, so it needs testing
   against the mood.
 - **Art and gameplay layout are tied together.** Model paths and plantings live in

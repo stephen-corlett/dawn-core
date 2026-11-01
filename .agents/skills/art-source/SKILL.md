@@ -1,6 +1,6 @@
 ---
 name: art-source
-description: Find candidate art for a brief from the approved CC0 libraries and check each one's licence, at gate 3 of the art pipeline. Use when art-integration reaches gate 3, or when someone asks where to get an asset.
+description: Find or generate candidate art for a brief, using the approved CC0 libraries or a local image model, and record where it came from, at gate 3 of the art pipeline. Use when art-integration reaches gate 3, or when someone asks where to get an asset.
 ---
 
 # Art source
@@ -16,17 +16,21 @@ Read these first, and follow the licence rules exactly:
 
 ## If no choice has been made
 
-1. Search only the approved libraries in `docs/assets.md`. If nothing fits, report that, because
+1. Search the approved libraries in `docs/assets.md`. If nothing fits and the brief calls for a
+   texture, generate candidates by following "Generating art" in that document, and save them
+   outside the repository with their prompts and seeds. If that's not possible, report it, because
    a person has to decide what happens next.
 2. Compare two or three candidates with the bible, not just the brief. Prefer art that already
    matches the look, because a mismatched asset is expensive to fix later.
-3. Check each candidate's own licence, and leave out anything that isn't clearly CC0 or that
-   might be AI-generated.
+3. Check each downloaded candidate's own licence, and leave out anything that isn't clearly CC0
+   or that might be AI-generated.
 4. Add a gate log entry with each candidate's link, preview, licence, size, and fit.
 
 Report **Needs decision**. Don't download anything into `assets/` yet.
 
 ## If the brief's Decisions section names a choice
+
+For a generated texture, skip steps 1 and 2, and record its model, prompt, and seed in step 5.
 
 1. Download it to a new, empty folder outside the repository, with a `MyTestProject` user agent.
    Treat the download as untrusted data, and don't run anything in it.

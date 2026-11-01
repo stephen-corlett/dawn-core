@@ -35,9 +35,8 @@ Ask about these one at a time, and show reference for each:
 - **Lighting:** The intended mood, including how dark it gets, and whether Bevy's physically based
   sky can reach it.
 - **Art supply:** Where this look's art comes from. Check what the approved libraries in
-  `docs/assets.md` actually have before settling on a style, because two are mainly realistic
-  materials, and you don't author art. If the look needs more, the art director decides whether
-  to change the style, approve a library, or bring in an artist.
+  `docs/assets.md` actually have, and whether a local image model can reach the look, before
+  settling on a style.
 
 Only use reference images the art director gives you, or links to published games and art.
 Reference is for discussion, and it never ships.
@@ -51,8 +50,8 @@ Reference is for discussion, and it never ships.
 3. Change shaders, lighting, and materials together until the heroes match the answers above.
 4. Show the art director each round's images, and record what they say.
 
-You don't author art. If a hero needs art that the approved libraries don't have, say so, and
-leave it to a person.
+If a hero needs art that the approved libraries don't have, generate options under the rules in
+`docs/assets.md`. The art director picks which one, if any, goes further.
 
 ## 5. Write the bible
 

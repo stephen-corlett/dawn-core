@@ -1,6 +1,6 @@
 ---
 name: art-source
-description: Find candidate art for a brief from the approved CC0 libraries and check each one's licence, at gate 3 of the art pipeline. Use when art-integration reaches gate 3, or when someone asks where to get an asset.
+description: Find or generate candidate art for a brief, using the approved CC0 libraries or a local image model, and record where it came from, at gate 3 of the art pipeline. Use when art-integration reaches gate 3, or when someone asks where to get an asset.
 context: fork
 background: false
 ---
