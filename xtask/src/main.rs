@@ -4,6 +4,7 @@
 mod architecture;
 mod coverage;
 mod test_structure;
+mod upgrades;
 
 use architecture::{CrateInfo, leaked_side_features, violations};
 use clap::{Parser, Subcommand};
@@ -61,6 +62,8 @@ enum Task {
         #[arg(long)]
         base: Option<String>,
     },
+    /// Show whether a newer Bevy is published and our dependencies support it
+    UpgradeStatus,
 }
 
 fn main() -> ExitCode {
@@ -71,6 +74,7 @@ fn main() -> ExitCode {
         Task::CheckAppSides => check_app_sides(),
         Task::CheckTests => check_tests(),
         Task::Coverage { base } => check_coverage(base),
+        Task::UpgradeStatus => upgrades::status(&workspace_root()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

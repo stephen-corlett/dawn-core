@@ -54,3 +54,7 @@ check:
 # Format all code
 fmt:
     cargo fmt --all
+
+# Show whether a newer Bevy is published and our dependencies support it
+upgrade-status:
+    cargo xtask upgrade-status
