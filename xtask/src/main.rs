@@ -409,8 +409,12 @@ fn check_coverage(base: Option<String>) -> TaskResult {
     }
 }
 
-/// Adds a job summary and inline annotations when running in GitHub Actions.
+/// Adds a job summary, inline annotations, and comment text in GitHub Actions.
 fn publish_to_github(result: &coverage::DiffCoverage) -> TaskResult {
+    if let Some(path) = env::var_os("COVERAGE_COMMENT_PATH") {
+        std::fs::write(path, result.comment_markdown())
+            .map_err(|error| format!("couldn't write the coverage comment: {error}"))?;
+    }
     if env::var_os("GITHUB_ACTIONS").is_some() {
         for annotation in result.annotations() {
             println!("{annotation}");
