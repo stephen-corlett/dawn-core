@@ -5,7 +5,8 @@ no storage bill, a fast download for contributors and players, and a clear licen
 everything that ships.
 
 Nothing here is checked automatically, so these rules need human judgment during code
-review.
+review. For the process of getting art into the game, see
+[docs/art-pipeline.md](art-pipeline.md).
 
 ## What goes where
 

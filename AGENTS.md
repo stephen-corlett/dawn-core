@@ -65,6 +65,11 @@ upgrade Bevy or lightyear. Skills live in `.agents/skills/`, the location shared
 agents. Claude Code doesn't list that folder, so each skill also has a short pointer
 in `.claude/skills/`, the same way `CLAUDE.md` points to this file.
 
+## Adding art
+
+Follow [docs/art-pipeline.md](docs/art-pipeline.md) to add or improve art. The `art-integration`
+skill runs the whole process, and asks a person for each art decision.
+
 ## Testing
 
 Use the testing levels in [docs/architecture.md](docs/architecture.md), and test at
