@@ -21,10 +21,11 @@ review.
 it there before the first commit that uses it, or the file goes into normal Git history
 for good.
 
-Nothing loads from `assets/` yet. Bevy reads from the folder of the crate being run,
-such as `crates/client/assets/`, unless `BEVY_ASSET_ROOT` or `AssetPlugin::file_path`
-says otherwise. Set this up in the apps when the first asset goes in. Sandboxes don't
-need this, because each already runs from its own crate's folder.
+Bevy reads from the folder of the crate being run, such as `crates/client/assets/`,
+unless `AssetPlugin::file_path` says otherwise. The client takes its folder from
+`DAWN_ASSET_FOLDER`, which defaults to `../../assets` in development. A sandbox that
+draws game assets passes the same path to `SandboxPlugin`, and one that only reads its
+own text data keeps using its crate's folder.
 
 ## Keeping files small
 
@@ -47,6 +48,7 @@ allowing another licence needs a human's approval and a change to this file.
 |---|---|---|
 | [Poly Haven](https://polyhaven.com) | Textures, HDRIs, and models | CC0 |
 | [ambientCG](https://ambientcg.com) | PBR materials | CC0 |
+| [Quaternius](https://quaternius.com) | Stylized models, characters, outfits, and animations | CC0 |
 
 - **No other licences:** Don't use CC-BY or any other licence, even from an approved
   library. If an asset isn't marked CC0, leave it out.
@@ -54,8 +56,10 @@ allowing another licence needs a human's approval and a change to this file.
   like it might be.
 - **Check each asset:** A site's general licence isn't enough. Confirm the licence on
   the asset you're downloading.
-- **If nothing fits:** Ask a human instead of looking elsewhere. Neither library is a
-  full source of characters or animations, so those need a decision first.
+- **Quaternius has two licences:** Newer content can use the Quaternius Asset License
+  instead, which isn't CC0. Read `License.txt` inside the download, and only use a pack
+  that says CC0 there and on its own page.
+- **If nothing fits:** Ask a human instead of looking elsewhere.
 - **Record each download:** Add one row to `assets/SOURCES.md` with the asset, source
   link, and licence. CC0 needs no credit, but the record shows an asset's licence and
   that it isn't AI-generated, and it tells us what to replace if a source turns out to
