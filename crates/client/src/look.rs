@@ -31,7 +31,7 @@ pub fn world_plugin(forest: Arc<Forest>) -> WorldClientPlugin {
             fog_color: Color::srgb(0.42, 0.5, 0.53),
             fog_start: 10.0,
             fog_end: 85.0,
-            shadow_distance: 45.0,
+            shadow_distance: 85.0,
             shadow_cascades: 2,
             shadow_resolution: 2048,
             saturation: 0.78,
@@ -168,6 +168,10 @@ mod tests {
 
                 test("fog hides the far side of the world", || {
                     assert!(start < end && end < reach * 2.0);
+                });
+
+                test("shadows reach the fog, so nobody sees them appear", || {
+                    assert!(world.mood.shadow_distance >= end);
                 });
             });
 
