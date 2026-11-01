@@ -26,8 +26,8 @@ pub(super) struct Stride {
     pub speed: f32,
     pub airborne: bool,
     pub rolling: bool,
-    /// Low to the ground, either sneaking or getting up after a roll.
-    pub crouched: bool,
+    pub recovering: bool,
+    pub sneaking: bool,
 }
 
 pub(super) struct MotionPlugin {
@@ -73,7 +73,8 @@ fn move_bodies(
         let ground = surface.0.ground_height(position.0.xz());
         stride.airborne = position.0.y - ground > config.airborne_height;
         stride.rolling = dodge.is_rolling();
-        stride.crouched = sneaking.0 || dodge.is_recovering();
+        stride.recovering = dodge.is_recovering();
+        stride.sneaking = sneaking.0;
 
         if let Some(facing) = facing(velocity, config.turn_speed) {
             transform
@@ -302,8 +303,8 @@ mod tests {
             when("one frame runs", || {
                 run_frames(&mut app, 1);
 
-                test("it counts as crouched", || {
-                    assert!(app.world().get::<Stride>(body).unwrap().crouched);
+                test("it counts as sneaking", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().sneaking);
                 });
             });
         });
@@ -319,8 +320,12 @@ mod tests {
             when("one frame runs", || {
                 run_frames(&mut app, 1);
 
-                test("it counts as crouched", || {
-                    assert!(app.world().get::<Stride>(body).unwrap().crouched);
+                test("it counts as recovering", || {
+                    assert!(app.world().get::<Stride>(body).unwrap().recovering);
+                });
+
+                test("it doesn't count as sneaking", || {
+                    assert!(!app.world().get::<Stride>(body).unwrap().sneaking);
                 });
 
                 test("it no longer counts as rolling", || {
