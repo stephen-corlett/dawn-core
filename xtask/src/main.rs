@@ -116,7 +116,12 @@ fn dev(clients: u64) -> TaskResult {
     for id in 1..=clients {
         let label = format!("client{id}");
         let mut command = Command::new(target_dir.join("client"));
-        command.env("PATH", &path).env("DAWN_ENV", "development");
+        // Clients inherit this tool's Cargo variables, which would make Bevy look for
+        // relative asset folders under `xtask/`.
+        command
+            .env("PATH", &path)
+            .env("DAWN_ENV", "development")
+            .env("DAWN_ASSET_FOLDER", workspace_root().join("assets"));
         command.args(["--client-id", &id.to_string()]);
         match spawn(&label, &mut command, None) {
             Ok(child) => client_processes.push(child),
