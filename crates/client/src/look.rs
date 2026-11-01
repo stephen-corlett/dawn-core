@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use core::f32::consts::PI;
 use std::sync::Arc;
 use world::Forest;
-use world::client::{GroundPalette, Mood, WorldClientPlugin};
+use world::client::{GroundPalette, GroundTexture, Mood, WorldClientPlugin};
 
 const CHARACTER_PARTS: [&str; 3] = [
     "characters/Male_Ranger.gltf",
@@ -23,23 +23,28 @@ pub fn world_plugin(forest: Arc<Forest>) -> WorldClientPlugin {
     WorldClientPlugin {
         forest,
         mood: Mood {
-            sky: Color::srgb(0.42, 0.5, 0.53),
-            sun_color: Color::srgb(1.0, 0.8, 0.58),
-            sun_illuminance: 6000.0,
+            sun_color: Color::WHITE,
+            sun_illuminance: 130_000.0,
             sun_position: Vec3::new(45.0, 24.0, 18.0),
-            ambient_color: Color::srgb(0.55, 0.66, 0.74),
-            ambient_brightness: 1200.0,
+            exposure_ev100: 14.0,
+            sky_light: 1.6,
             fog_color: Color::srgb(0.42, 0.5, 0.53),
             fog_start: 10.0,
             fog_end: 85.0,
             shadow_distance: 70.0,
-            saturation: 0.78,
+            saturation: 0.88,
             glow: 0.08,
         },
         ground: GroundPalette {
-            moss: Color::srgb(0.13, 0.2, 0.1),
-            grass: Color::srgb(0.27, 0.32, 0.13),
-            dirt: Color::srgb(0.3, 0.23, 0.16),
+            moss: Color::srgb(0.62, 0.68, 0.55),
+            grass: Color::srgb(0.78, 0.76, 0.55),
+            dirt: Color::srgb(0.62, 0.45, 0.33),
+        },
+        ground_texture: GroundTexture {
+            color: "ground/Ground037_Color.jpg".into(),
+            normal: "ground/Ground037_NormalGL.jpg".into(),
+            roughness: "ground/Ground037_Roughness.jpg".into(),
+            tile_size: 5.0,
         },
     }
 }
@@ -139,6 +144,13 @@ mod tests {
             when("their files are compared with the asset folder", || {
                 let exists = |file: &str| assets.join(file).exists();
 
+                test("every ground texture exists", || {
+                    let texture = &world.ground_texture;
+                    assert!(exists(&texture.color));
+                    assert!(exists(&texture.normal));
+                    assert!(exists(&texture.roughness));
+                });
+
                 test("every part of the character exists", || {
                     assert!(avatar.appearance.parts.iter().all(|part| exists(part)));
                 });
@@ -149,10 +161,11 @@ mod tests {
             });
 
             when("their moods are inspected", || {
-                let fog = world.mood.fog_color;
+                let (start, end) = (world.mood.fog_start, world.mood.fog_end);
+                let reach = movement_config().world_half_extent;
 
-                test("the distance fades into the sky", || {
-                    assert_eq!(fog, world.mood.sky);
+                test("fog hides the far side of the world", || {
+                    assert!(start < end && end < reach * 2.0);
                 });
             });
 
