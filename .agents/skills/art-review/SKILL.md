@@ -29,8 +29,9 @@ If the look development scene doesn't exist, report **Blocked**.
    full size, and don't rely on a shrunken contact sheet.
 5. **Judge it against the bible.** Check silhouette, value, material, and lighting. Name the cause
    of each problem, such as texture detail, resolution, filtering, or lighting.
-6. **Measure.** Report pixels per meter on the surface a player sees, frame rate against the
-   previous value, near-black pixels, and the `just dev` log.
+6. **Measure.** Report pixels per meter on the surface a player sees against the technical spec,
+   frame rate against the previous value, and the `just dev` log. Judge darkness and surface
+   detail against the bible. More detail, or fewer dark pixels, doesn't count as an improvement.
 7. **Check motion.** Stills can't show shimmer. Move the camera between frames and compare, or
    record that motion is unverified.
 8. **Record.** Add a gate log entry with image paths, measurements, misses, and what you couldn't

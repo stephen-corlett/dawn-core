@@ -16,7 +16,14 @@ every decision here. You offer options, prove them on screen, and write down wha
 Agree a hard end for exploration, as a number of review rounds. Three is a good default.
 Without one, style work never finishes.
 
-## 2. Decide the questions
+## 2. Compare where we've been
+
+Nothing built so far is the baseline, because all of it came before this process. Build the game
+at commit `b026499`, before the photo-scanned ground, and at the current commit. Show the art
+director the same views from both, and ask what's working and what isn't in each. Use their
+answers as the starting point, and don't assume that the newer one is better.
+
+## 3. Decide the questions
 
 Ask about these one at a time, and show reference for each:
 
@@ -25,27 +32,34 @@ Ask about these one at a time, and show reference for each:
 - **Shape:** The silhouettes and proportions that belong in this world.
 - **Palette:** The role of each color, not just swatches.
 - **Materials:** How stone, bark, leaves, skin, and metal are shown.
-- **Lighting:** The intended mood, including how dark it gets.
+- **Lighting:** The intended mood, including how dark it gets, and whether Bevy's physically based
+  sky can reach it.
+- **Art supply:** Where this look's art comes from. Check what the approved libraries in
+  `docs/assets.md` actually have before settling on a style, because two are mainly realistic
+  materials, and you don't author art. If the look needs more, the art director decides whether
+  to change the style, approve a library, or bring in an artist.
 
 Only use reference images the art director gives you, or links to published games and art.
 Reference is for discussion, and it never ships.
 
-## 3. Prove it in the engine
+## 4. Prove it in the engine
 
 1. Agree three hero assets: normally the character, one tree, and one rock.
-2. Use the look development scene. If it doesn't exist, build it first, as a sandbox, with fixed
-   lighting and views at 1, 5, and 20 meters.
+2. Use the look development scene. If it doesn't exist, build it first, with fixed lighting and
+   views at 1, 5, and 20 meters. Use the game's real mood from `crates/client/src/look.rs`, not
+   the world sandbox's own values.
 3. Change shaders, lighting, and materials together until the heroes match the answers above.
 4. Show the art director each round's images, and record what they say.
 
 You don't author art. If a hero needs art that the approved libraries don't have, say so, and
 leave it to a person.
 
-## 4. Write the bible
+## 5. Write the bible
 
 When the art director signs off, write `docs/art/bible.md`. Keep it short, and include:
 
-- Each answer from step 2
+- Each answer from step 3
+- The texel density and darkness range that worked
 - Three to five on-style and off-style images per pillar, including near misses
 - The same asset under correct and incorrect lighting
 

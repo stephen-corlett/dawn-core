@@ -18,8 +18,11 @@ Read these first:
 
 1. Put the asset in the game through its owning module's configuration, the way similar assets
    are added. Replace the placeholder from gate 2.
-2. Keep game-specific choices in the app, such as `crates/client/src/look.rs`, and don't put
-   paths or tuning values in a game module.
+2. Don't put paths or tuning values in a game module. How things look belongs in
+   `crates/client/src/look.rs`. Forest models and plantings belong in
+   `crates/protocol/src/forest.rs`, which the server also uses, so add a new planting only at the
+   end of the list. Anywhere else moves every later prop, including solid trees. Report
+   **Needs decision** if a change would move anything a player can collide with.
 3. Add `#[spec]` tests at the lowest level that shows the behavior. A test that reads a model or
    texture has to handle a Git LFS pointer, and has to check something useful in CI too.
 4. Run `just check`, `just test`, and `just coverage`.

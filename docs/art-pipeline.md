@@ -86,7 +86,8 @@ are two different processes:
 |---|---|---|
 | Settle the look first | Started with a pack and no written target | Each fix is a guess at an unstated goal |
 | Review hero assets in the engine | Judged one screenshot | Most assets were never inspected |
-| Keep stylized surfaces clean | Baked photo scans into painted art | Probably some of the fuzziness |
+| Keep stylized surfaces clean | Put a photo scan on the ground, and baked scans into props | The look moved towards realism, and away from the goal |
+| Judge against the goal | Scored surfaces by how much detail they had | The score rewarded noise, so the wrong fix looked like a success |
 | Fix art at the source | Patched files in a temporary folder | Results can't be reproduced from the repository |
 | Cook textures before runtime | Built mipmaps on the CPU at load | Wrong layer, and they don't reach the screen yet |
 | Automate the rules | Wrote a one-off check per plan | Nothing stops the next asset going wrong |
@@ -166,6 +167,8 @@ Each of these comes from something that went wrong on the forest work.
 - **Find the cause.** Name why something looks wrong before changing it. A surface that looks
   flat might have no texture, a bad texture, a low resolution, or a filtering problem.
 - **Don't add scan noise to painted art.** Fix a stylized surface with shape, value, and light.
+- **Measure against the bible.** More detail, or fewer dark pixels, isn't better on its own. A
+  number can show that something changed, but only the bible says whether the change is good.
 - **Keep every change reproducible.** Nothing important lives in a temporary folder.
 - **Report misses.** Don't change a target to pass it. Record the miss for a person to decide.
 - **Leave the machine alone.** Never stop a game someone else started, or use `--target-dir`.
@@ -192,7 +195,7 @@ imported_assets/   What the game reads. Generated, not committed.
 
 | Rule | Starting value |
 |---|---|
-| Texel density, large props seen up close | At least 200 pixels per meter, including detail maps |
+| Texel density | Undecided. The look lock sets it from the hero assets. |
 | Texture size | As `docs/assets.md`: 1K, or 2K for things seen up close |
 | Mipmaps | Required on all 3D textures |
 | Texture values | Neutral, so that lighting carries the mood |
@@ -211,7 +214,7 @@ the spec is at fault, not the asset.
 |---|---|---|
 | Skills, template, and this document | Done | Everything |
 | Art bible, `docs/art/bible.md` | Not written | Gates 1, 3, and 6 |
-| Look development scene | Not built, only a temporary tool on `feat/forest-surfaces` | Gates 2 and 5 |
+| Look development scene | Not built, only a temporary tool on the local `wip/forest-bakes` branch | Gates 2 and 5 |
 | Cook step and automated rules | Not built | Gate 4 |
 
 Until these exist, `art-integration` stops at the first gate that needs them and says what's
@@ -220,8 +223,26 @@ missing. Build them in this order:
 1. Decide the look, with the art director: how painted, how detailed, and how dark.
 2. Turn the temporary inventory tool into a look development scene.
 3. Test Bevy's asset processor with one texture, and prove with a pixel comparison that its
-   mipmaps reach the screen. The mipmaps built at load in `feat/forest-surfaces` don't yet.
-4. Review the forest surfaces work against the bible, and keep only what fits.
+   mipmaps reach the screen. The mipmaps built at load in `wip/forest-bakes` never did.
+4. Review `wip/forest-bakes` against the bible, and redo only what fits as a pipeline recipe.
+
+## Known problems
+
+- **The merged look isn't the baseline.** The photo-scanned ground, white sun, and higher
+  saturation from pull request 19 came before this process. So did the look before it. The look
+  lock compares them, and keeps neither by default.
+- **Art supply may limit the style.** Two of the three approved libraries are mainly realistic
+  materials, and agents don't author art. A hand-painted look may need a new library or an artist.
+- **The sky hasn't been judged.** Bevy's atmosphere is physically based, so it needs testing
+  against the mood.
+- **Art and gameplay layout are tied together.** Model paths and plantings live in
+  `crates/protocol/src/forest.rs`, which the server also uses. Adding a planting anywhere but the
+  end of the list moves everything after it, including solid trees. Separate these before adding
+  many models.
+- **The world sandbox has its own lighting.** Its mood differs from the game's, so look
+  development has to use the game's real settings.
+- **The game reads source files.** There's no asset processing yet, so `assets/` is what runs, and
+  `imported_assets/` still has to be added to `.gitignore`.
 
 [juego]: https://www.juegostudio.com/blog/art-direction-in-games
 [lemonsky]: https://www.lemonskystudios.com/insights/game-art-outsourcing-pipeline

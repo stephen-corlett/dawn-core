@@ -23,8 +23,8 @@ where code belongs.
 - Keep server-only rules out of client-reachable crates.
 - Don't add game crates to `xtask`.
 - Follow [docs/assets.md](docs/assets.md) before adding an asset. Only pull CC0 assets
-  from Poly Haven or ambientCG, and ask a human before using any other source or
-  licence. Use 1K textures by default, and record each download in `assets/SOURCES.md`.
+  from Poly Haven, ambientCG, or Quaternius, and ask a human before using any other source
+  or licence. Use 1K textures by default, and record each download in `assets/SOURCES.md`.
 - Don't weaken a check or raise a limit to get a change through. Fix the design,
   or ask a human to approve a rule change.
 
