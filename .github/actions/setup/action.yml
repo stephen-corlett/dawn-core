@@ -2,6 +2,9 @@ name: Set up Rust
 description: Installs system packages and Rust, and restores the dependency cache.
 
 inputs:
+  cache-key:
+    description: Which dependency cache to use
+    required: true
   save-cache:
     description: Save the dependency cache when the job ends
     default: "false"
@@ -17,9 +20,9 @@ runs:
     - name: Install Rust toolchain from rust-toolchain.toml
       shell: bash
       run: rustup show active-toolchain || rustup toolchain install
-    # An existing key is never saved over, so change this name when Build starts
-    # compiling something new. Otherwise the new output won't reach the cache.
+    # An existing key is never saved over, so use a new cache-key when a Build entry
+    # starts compiling something new. Otherwise the new output won't reach the cache.
     - uses: Swatinem/rust-cache@v2
       with:
-        shared-key: ci-instrumented
+        shared-key: ${{ inputs.cache-key }}
         save-if: ${{ inputs.save-cache }}

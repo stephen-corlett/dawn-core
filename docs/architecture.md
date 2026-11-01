@@ -289,9 +289,10 @@ executable lines, and it always lists uncovered lines with a suggested level:
   crates/server/src/network.rs:48   suggested: integration
 ```
 
-CI runs each test once, with coverage on. `Build` compiles one instrumented build,
-`Test` restores it for the coverage check, and end-to-end tests then use the same
-build. Each pull request gets one comment, updated on every push, with the result and a
+CI runs each test once, with coverage on. `Build` is a matrix of three parallel entries,
+each with its own cache: `Check` for `Lint`, `Isolated crates` for `check-isolated`, and
+`Coverage` for `Test`. `Test` restores that instrumented build for the coverage check,
+and end-to-end tests then use the same build. Each pull request gets one comment, updated on every push, with the result and a
 short list of missing lines. Uncovered lines are also annotated on the diff. The
 comment and annotations have limits, so the job summary is the complete list.
 
