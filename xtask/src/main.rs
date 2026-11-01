@@ -356,6 +356,8 @@ fn check_coverage(base: Option<String>) -> TaskResult {
         "nextest",
         "--no-report",
         "--workspace",
+        "--exclude",
+        "xtask",
         "--filterset",
         "not package(e2e)",
     ])?;
