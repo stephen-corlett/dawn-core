@@ -3,15 +3,15 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Paths left out of the coverage check because tests can't reach them. `bdd` runs
-/// inside the compiler, and the rest open windows or start whole programs.
+/// Paths left out of the coverage check. `xtask` is project tooling, `bdd` runs inside
+/// the compiler, and the rest open windows or start whole programs.
 pub const EXCLUDED_PATHS: [&str; 6] = [
     "crates/client/src/main.rs",
     "crates/client/src/view.rs",
     "crates/server/src/main.rs",
     "libs/bdd/",
     "libs/sandbox_kit/",
-    "xtask/src/main.rs",
+    "xtask/",
 ];
 
 /// The lowest share of changed executable lines that tests must run.
@@ -578,6 +578,19 @@ mod tests {
                 test("only the limit is listed", || {
                     assert_eq!(rows, 10);
                     assert!(comment.contains("2 more files are in the job summary."));
+                });
+            });
+        });
+
+        given("an uncovered line in project tooling", || {
+            let changed = lines("xtask/src/coverage.rs", &[5]);
+            let report = counts("xtask/src/coverage.rs", &[(5, 0)]);
+
+            when("coverage is compared", || {
+                let result = diff_coverage(&changed, &report);
+
+                test("it isn't counted", || {
+                    assert_eq!(result.executable_lines, 0);
                 });
             });
         });

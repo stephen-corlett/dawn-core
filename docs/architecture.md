@@ -305,7 +305,8 @@ comment and annotations have limits, so the job summary is the complete list.
 - **What's compared:** By default, your working tree against where the branch left
   `origin/main`, including uncommitted and new files. Use `just coverage --base <ref>` to
   compare with something else. A repository needs a first commit for this to work.
-- **Excluded code:** `EXCLUDED_PATHS` in `xtask/src/coverage.rs` lists code tests can't
+- **What counts:** Code in `crates/` and `libs/`. `EXCLUDED_PATHS` in
+  `xtask/src/coverage.rs` leaves out project tooling in `xtask/`, plus code tests can't
   reach, such as rendering and program entry points. Don't add to it to get a change
   through.
 - **Executed isn't verified:** Coverage shows a line ran, not that a test checked the
