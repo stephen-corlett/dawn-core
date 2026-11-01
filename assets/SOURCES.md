@@ -9,4 +9,5 @@ Add one row per download, in the same commit as the asset. See
 | `characters/Male_Head`: Universal Base Characters, Standard. Cut down to the head, eyes, and brows of `Superhero_Male_FullBody`, with unused vertex attributes removed. | [itch.io](https://quaternius.itch.io/universal-base-characters) | CC0 |
 | `characters/Hair_Beard`: Universal Base Characters, Standard | [itch.io](https://quaternius.itch.io/universal-base-characters) | CC0 |
 | `characters/Male_Ranger`: Modular Character Outfits - Fantasy, Standard, with unused vertex attributes removed | [itch.io](https://quaternius.itch.io/modular-character-outfits-fantasy) | CC0 |
+| `ground/Ground037`: Ground 037, 1K. Color, normal (OpenGL), and roughness maps, recompressed. Created by photogrammetry. | [ambientCG](https://ambientcg.com/a/Ground037) | CC0 |
 | `nature/`: Stylized Nature MegaKit, Standard | [itch.io](https://quaternius.itch.io/stylized-nature-megakit) | CC0 |

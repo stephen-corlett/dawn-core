@@ -4,7 +4,7 @@ mod ground;
 mod mood;
 mod props;
 
-pub use ground::GroundPalette;
+pub use ground::{GroundPalette, GroundTexture};
 pub use mood::Mood;
 
 use crate::Forest;
@@ -15,6 +15,7 @@ pub struct WorldClientPlugin {
     pub forest: Arc<Forest>,
     pub mood: Mood,
     pub ground: GroundPalette,
+    pub ground_texture: GroundTexture,
 }
 
 impl Plugin for WorldClientPlugin {
@@ -23,6 +24,7 @@ impl Plugin for WorldClientPlugin {
             ground::GroundPlugin {
                 forest: self.forest.clone(),
                 palette: self.ground,
+                texture: self.ground_texture.clone(),
             },
             props::PropsPlugin {
                 forest: self.forest.clone(),
@@ -37,6 +39,7 @@ mod tests {
     use super::*;
     use crate::{Planting, WorldConfig};
     use bdd::spec;
+    use bevy::light::atmosphere::ScatteringMedium;
 
     fn plugin() -> WorldClientPlugin {
         WorldClientPlugin {
@@ -61,12 +64,11 @@ mod tests {
                 }],
             })),
             mood: Mood {
-                sky: Color::BLACK,
                 sun_color: Color::WHITE,
-                sun_illuminance: 9000.0,
+                sun_illuminance: 130_000.0,
                 sun_position: Vec3::new(30.0, 20.0, 10.0),
-                ambient_color: Color::WHITE,
-                ambient_brightness: 200.0,
+                exposure_ev100: 14.0,
+                sky_light: 1.0,
                 fog_color: Color::BLACK,
                 fog_start: 10.0,
                 fog_end: 80.0,
@@ -79,6 +81,12 @@ mod tests {
                 grass: Color::WHITE,
                 dirt: Color::BLACK,
             },
+            ground_texture: GroundTexture {
+                color: "color.jpg".into(),
+                normal: "normal.jpg".into(),
+                roughness: "roughness.jpg".into(),
+                tile_size: 4.0,
+            },
         }
     }
 
@@ -90,6 +98,8 @@ mod tests {
             app.init_asset::<Mesh>();
             app.init_asset::<StandardMaterial>();
             app.init_asset::<WorldAsset>();
+            app.init_asset::<ScatteringMedium>();
+            app.init_asset::<Image>();
             app.add_plugins(plugin());
 
             when("it starts", || {

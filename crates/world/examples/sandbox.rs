@@ -4,7 +4,7 @@
 use bevy::prelude::*;
 use sandbox_kit::SandboxPlugin;
 use std::sync::Arc;
-use world::client::{GroundPalette, Mood, WorldClientPlugin};
+use world::client::{GroundPalette, GroundTexture, Mood, WorldClientPlugin};
 use world::{Forest, Planting, WorldConfig};
 
 fn config() -> WorldConfig {
@@ -53,12 +53,11 @@ fn main() {
         .add_plugins(WorldClientPlugin {
             forest,
             mood: Mood {
-                sky: Color::srgb(0.42, 0.48, 0.5),
-                sun_color: Color::srgb(1.0, 0.82, 0.62),
-                sun_illuminance: 9000.0,
+                sun_color: Color::WHITE,
+                sun_illuminance: 130_000.0,
                 sun_position: Vec3::new(40.0, 22.0, 20.0),
-                ambient_color: Color::srgb(0.5, 0.6, 0.7),
-                ambient_brightness: 250.0,
+                exposure_ev100: 14.0,
+                sky_light: 1.0,
                 fog_color: Color::srgb(0.42, 0.48, 0.5),
                 fog_start: 30.0,
                 fog_end: 120.0,
@@ -67,9 +66,15 @@ fn main() {
                 glow: 0.1,
             },
             ground: GroundPalette {
-                moss: Color::srgb(0.13, 0.2, 0.11),
-                grass: Color::srgb(0.2, 0.26, 0.12),
-                dirt: Color::srgb(0.25, 0.19, 0.13),
+                moss: Color::srgb(0.62, 0.68, 0.55),
+                grass: Color::srgb(0.78, 0.76, 0.55),
+                dirt: Color::srgb(0.62, 0.45, 0.33),
+            },
+            ground_texture: GroundTexture {
+                color: "ground/Ground037_Color.jpg".into(),
+                normal: "ground/Ground037_NormalGL.jpg".into(),
+                roughness: "ground/Ground037_Roughness.jpg".into(),
+                tile_size: 5.0,
             },
         })
         .run();
