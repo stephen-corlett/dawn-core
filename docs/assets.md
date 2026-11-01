@@ -12,8 +12,8 @@ review.
 | What | Where |
 |---|---|
 | Assets the game uses | `assets/`, stored with Git LFS |
-| Where each pack came from | [assets/SOURCES.md](../assets/SOURCES.md), as normal text |
-| Downloaded packs and zips | A local folder outside the repository |
+| Where each asset came from | [assets/SOURCES.md](../assets/SOURCES.md), as normal text |
+| Original downloads and zips | A local folder outside the repository |
 | Blender source files | Only if you've edited them and need to keep the changes |
 
 `.gitattributes` sends binary asset types to Git LFS. If you add a new file type, add
@@ -37,27 +37,27 @@ says otherwise. Set this up in the apps when the first asset goes in.
 
 ## Sources and licences
 
-Don't add AI-generated assets. Open-upload sites don't always label them, so prefer
-sources where one creator or curator makes or checks the work.
+Only use assets from the approved libraries below, and only under CC0. Agents must not
+pull assets from anywhere else, even if the licence looks fine. Adding a library or
+allowing another licence needs a human's approval and a change to this file.
 
-| Source | Use it for | Licence |
+| Approved library | Use it for | Licence |
 |---|---|---|
-| [Quaternius](https://quaternius.com) | Characters, monsters, nature, and animations | CC0 |
-| [KayKit](https://kaylousberg.itch.io) | Stylized characters and environment kits | Free packs are CC0, but check each pack |
-| [Kenney](https://kenney.nl/assets) | Filler and prototype kits | CC0 |
 | [Poly Haven](https://polyhaven.com) | Textures, HDRIs, and models | CC0 |
 | [ambientCG](https://ambientcg.com) | PBR materials | CC0 |
 
-- **Visual style:** Pick one main creator's style, and only use others to fill gaps.
-- **Allowed licences:** Use CC0 where possible. CC-BY is allowed if the pack's row in
-  `assets/SOURCES.md` names the author, and the shipped game credits them. Don't use
-  anything that bans commercial use or redistribution, because the game has to ship.
+- **No other licences:** Don't use CC-BY or any other licence, even from an approved
+  library. If an asset isn't marked CC0, leave it out.
+- **No AI-generated assets:** Leave out anything that's labeled as AI-generated or looks
+  like it might be.
 - **Check each asset:** A site's general licence isn't enough. Confirm the licence on
-  the asset or pack you're downloading.
-- **Record each pack:** Add one row to `assets/SOURCES.md` with the pack, source link,
-  and licence. CC0 needs no credit, but the record shows an asset's licence and that it
-  isn't AI-generated, and it tells us what to replace if a source turns out to be a
-  problem.
+  the asset you're downloading.
+- **If nothing fits:** Ask a human instead of looking elsewhere. Neither library is a
+  full source of characters or animations, so those need a decision first.
+- **Record each download:** Add one row to `assets/SOURCES.md` with the asset, source
+  link, and licence. CC0 needs no credit, but the record shows an asset's licence and
+  that it isn't AI-generated, and it tells us what to replace if a source turns out to
+  be a problem.
 
 ## Staying inside the free tier
 
