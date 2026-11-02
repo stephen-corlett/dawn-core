@@ -1,6 +1,6 @@
 # Project Dawn Core
 
-A 3D MMO built with Bevy and lightyear. The server is authoritative: clients
+A 3D game built with Bevy and lightyear. The server is authoritative: clients
 send requests, and the server decides what happens.
 
 ## Getting started
