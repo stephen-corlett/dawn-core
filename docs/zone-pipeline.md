@@ -195,7 +195,7 @@ what each player receives, which an MMO this size will need.
 
 ```text
 assets/zones/<zone>/      Shape and dressing, as text. Clients and the server may read shape.
-  shape                   Terrain strokes, blocked land, and solids. Both sides need these.
+  shape.ron               Terrain strokes and blocked land. Both sides need these.
   dressing                Regions, scatter rules, and models. Only clients need these.
 Server-only data folder   Spawns, quest rewards, and anything clients must never see.
 docs/world/zones/<zone>.md  Why everything is where it is.
@@ -204,13 +204,18 @@ docs/world/zones/<zone>.md  Why everything is where it is.
 - **Three kinds of data:** Shape is shared, dressing is client-only, and quest secrets are server-only.
   This also solves the known problem that art and gameplay layout are tied together in
   `crates/protocol/src/forest.rs`.
-- **Terrain is a recipe:** The shape file is an ordered list of named strokes, such as a ridge along a
-  line, a valley, a plateau, or a riverbed, with a reason on each. Fine noise is added on top. Both
-  sides build the same result, as they do with the forest today.
+- **Terrain is a recipe:** The shape file is RON, read by `ZoneShape::parse` in `world`, which takes
+  text so that the game and tools can each supply it. It's an ordered list of named strokes along
+  lines. `Raise` adds height, or cuts with a negative height, and `Level` blends to one height for
+  towns and roads. Fine noise is added on top, and both sides build the same result.
+- **Reasons are enforced:** The parser rejects a stroke or blocked area with no reason, and reports
+  every problem at once.
+- **Blocked land is real:** Outlines stop movement directly, however gentle the ground looks, because
+  there's no slope rule and the scarps planned so far aren't steep enough to read as walls.
 - **Tools live in `world`:** `xtask` can't depend on game crates, so zone checks belong in a `world`
   example, run from `just`.
 - **New crates pass the tests:** Quests and NPCs each have to pass "What makes a game module".
-- **The formats aren't decided.** Work them out when building zone data, and update this section.
+- **The dressing format isn't decided.** Work it out when separating dressing from shape.
 
 ## What's built
 
@@ -219,9 +224,9 @@ docs/world/zones/<zone>.md  Why everything is where it is.
 | Skills, templates, and this document | Done | Everything |
 | World bible, `docs/world/bible.md` | Done | Gate 1 |
 | Scale test, [report](world/scale-test.md) | Done for frame rate. Motion and the real game are unproven. | Gate 3 |
-| Zone data: shape strokes in a file, read by both sides | Not built | Gate 3 |
+| Zone data: `Zone` and `ZoneShape` in `world` | Done, but the game still runs the forest | Gate 3 |
+| Solids in a spatial index | Done | Gate 3 |
 | Far view: ground level of detail and forest stand-ins | Proven in the scale test, not in the game | Gate 3 |
-| Solids in a spatial index | Not built | Gate 3 |
 | `zone-view`: top-down maps, and views from a player's eye at named places | Not built | Gates 3 to 6 |
 | `zone-check`: route times, sight graph, and gaps between beats | Not built | Gates 3 and 4 |
 | Dressing separated from shape | Not built | Gate 5 |
@@ -238,7 +243,7 @@ Build in that order.
 
 1. Sign off the world bible.
 2. Run gates 1 and 2 for the first zone. They need nothing built.
-3. Build zone data, the far view, `zone-view`, and `zone-check`.
+3. Build the far view, `zone-view`, and `zone-check`.
 4. Run gate 3 on a calibration zone of about 3 km, with a 10-minute route holding the arrival, the
    hub, and one landmark.
 5. Take that through gate 7, and fix this process using what went wrong.

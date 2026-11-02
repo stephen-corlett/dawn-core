@@ -9,9 +9,15 @@
 #[cfg(feature = "client")]
 pub mod client;
 mod forest;
+mod shape;
+mod solids;
 mod terrain;
+mod zone;
 
-pub use forest::{Forest, PlacedProp, Solid};
+pub use forest::{Forest, PlacedProp};
+pub use shape::{BlockedLand, Detail, ShapeError, Stroke, StrokeAction, ZoneShape};
+pub use solids::{Solid, Solids};
+pub use zone::Zone;
 
 use bevy::prelude::*;
 

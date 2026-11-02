@@ -90,7 +90,7 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
 
-fn smooth(t: f32) -> f32 {
+pub fn smooth(t: f32) -> f32 {
     t * t * (3.0 - 2.0 * t)
 }
 
