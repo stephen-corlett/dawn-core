@@ -9623,7 +9623,9 @@ dependencies = [
  "bdd",
  "bevy",
  "movement",
+ "ron",
  "sandbox_kit",
+ "serde",
 ]
 
 [[package]]

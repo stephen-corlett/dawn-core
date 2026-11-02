@@ -1,4 +1,4 @@
-use crate::{Planting, WorldConfig, terrain};
+use crate::{Planting, Solid, Solids, WorldConfig, terrain};
 use bevy::prelude::*;
 use movement::WalkSurface;
 
@@ -17,33 +17,28 @@ pub struct PlacedProp {
     pub scale: f32,
 }
 
-/// A circle on the XZ plane that players can't walk through.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Solid {
-    pub center: Vec2,
-    pub radius: f32,
-}
-
 /// A grown world: the ground and everything placed on it. The same config always
 /// grows the same forest.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Forest {
     config: WorldConfig,
     props: Vec<PlacedProp>,
-    solids: Vec<Solid>,
+    solids: Solids,
 }
 
 impl Forest {
     pub fn new(config: WorldConfig) -> Self {
         let mut forest = Self {
             props: Vec::new(),
-            solids: Vec::new(),
+            solids: Solids::default(),
             config,
         };
         let mut spaced = Vec::new();
+        let mut solids = Vec::new();
         for planting in 0..forest.config.plantings.len() {
-            forest.plant(planting, &mut spaced);
+            forest.plant(planting, &mut spaced, &mut solids);
         }
+        forest.solids = Solids::new(solids);
         forest
     }
 
@@ -56,7 +51,7 @@ impl Forest {
     }
 
     pub fn solids(&self) -> &[Solid] {
-        &self.solids
+        self.solids.all()
     }
 
     /// How far a point is from the middle of the nearest trail.
@@ -69,7 +64,7 @@ impl Forest {
         terrain::noise(self.config.seed + 2, at)
     }
 
-    fn plant(&mut self, planting: usize, spaced: &mut Vec<(Vec2, f32)>) {
+    fn plant(&mut self, planting: usize, spaced: &mut Vec<(Vec2, f32)>, solids: &mut Vec<Solid>) {
         let kind = self.config.plantings[planting].clone();
         for item in 0..kind.count {
             let stream = planting as u32 * STREAM_STRIDE + item;
@@ -93,7 +88,7 @@ impl Forest {
                 spaced.push((at, kind.spacing));
             }
             if kind.solid_radius > 0.0 {
-                self.solids.push(Solid {
+                solids.push(Solid {
                     center: at,
                     radius: kind.solid_radius * scale,
                 });
@@ -129,15 +124,7 @@ impl WalkSurface for Forest {
     }
 
     fn push_out(&self, at: Vec2, radius: f32) -> Vec2 {
-        self.solids.iter().fold(at, |at, solid| {
-            let offset = at - solid.center;
-            let reach = solid.radius + radius;
-            if offset.length_squared() < reach * reach {
-                solid.center + offset.try_normalize().unwrap_or(Vec2::X) * reach
-            } else {
-                at
-            }
-        })
+        self.solids.push_out(at, radius)
     }
 }
 
@@ -287,10 +274,10 @@ mod tests {
             let forest = Forest {
                 config: config(),
                 props: Vec::new(),
-                solids: vec![Solid {
+                solids: Solids::new(vec![Solid {
                     center: Vec2::new(10.0, 0.0),
                     radius: 1.0,
-                }],
+                }]),
             };
 
             when("a body walks into the tree", || {

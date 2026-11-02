@@ -11,6 +11,8 @@ client = ["bevy/3d", "bevy/jpeg"]
 [dependencies]
 bevy.workspace = true
 movement.workspace = true
+ron.workspace = true
+serde.workspace = true
 
 [dev-dependencies]
 bdd.workspace = true
