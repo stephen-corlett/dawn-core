@@ -17,6 +17,7 @@ What this asset does in the game, where a player sees it, and from how close.
 - **Silhouette:** What it has to read as, and from what distance.
 - **Budget:** Triangles, texture size, and how many appear in the scene.
 - **Game module:** Which crate owns it.
+- **Kit:** Which kit it belongs to, as in [docs/assets.md](../assets.md), and any zone that needs it.
 
 ## Decisions
 

@@ -199,11 +199,12 @@ imported_assets/   What the game reads. Generated, not committed.
 | Texture size | As `docs/assets.md`: 1K, or 2K for things seen up close |
 | Mipmaps | Required on all 3D textures, once the cook step exists |
 | Texture values | Neutral, so that lighting carries the mood |
-| Frame rate | At least 200 frames per second in the real game, at 720p on the development machine |
-| Shadows | Two layers at 2048 pixels, reaching as far as the fog, so that nobody sees them appear. Resolution costs the most, and distance costs almost nothing. |
+| Frame rate | An average of at least 200 frames per second in the real game, at 720p on the development machine. Report 1% lows as well. |
+| Shadows | Two layers at 2048 pixels, reaching as far as the fog, so that nobody sees them appear. Zones with long views use three, so each layer covers more ground and detail falls with distance. Resolution costs the most, and distance costs almost nothing. |
 
-Measure frame rate on a window on the main monitor, because a window on the 59 Hz second monitor
-is capped at 60. Trees cost far more than anything else, so check the frame rate after adding any.
+Measure frame rate on a focused window on the main monitor. A window on the 59 Hz second monitor is
+capped at 60, and Bevy limits an unfocused window to 60 too. Trees cost far more than anything else,
+so check the frame rate after adding any.
 
 ### Definition of done
 

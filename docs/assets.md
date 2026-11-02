@@ -13,6 +13,8 @@ review. For the process of getting art into the game, see
 | What | Where |
 |---|---|
 | Assets the game uses | `assets/`, stored with Git LFS |
+| Art grouped for reuse | `assets/kits/<kit>/`. See [Asset kits](#asset-kits). |
+| A zone's layout, as text | `assets/zones/<zone>/`, once the [zone pipeline](zone-pipeline.md) builds it |
 | Text data that only a sandbox reads | `crates/<module>/assets/`, as normal text |
 | Where each asset came from | [assets/SOURCES.md](../assets/SOURCES.md), as normal text |
 | Original downloads and zips | A local folder outside the repository |
@@ -27,6 +29,26 @@ unless `AssetPlugin::file_path` says otherwise. The client takes its folder from
 `DAWN_ASSET_FOLDER`, which defaults to `../../assets` in development. A sandbox that
 draws game assets passes the same path to `SandboxPlugin`, and one that only reads its
 own text data keeps using its crate's folder.
+
+## Asset kits
+
+Art is grouped into kits by what it is, not by which zone first used it. A zone lists the kits it
+uses in [the atlas](world/atlas.md), so kits can be shared and a zone's download stays known.
+
+| Kind | Examples | Shared by |
+|---|---|---|
+| Common | Props and small rocks that fit anywhere | Every zone |
+| Biome | Ground, plants, trees, and rocks for one kind of land | Zones with that land |
+| Culture | The buildings and belongings of one people | Everywhere they live |
+| Signature | A zone's landmarks and anything unique to it | One zone |
+
+- **Layout:** Each kit has `assets/kits/<kit>/`, and its generated art has a recipe in
+  `tools/art-bake/<kit>.json`.
+- **New kits:** A new kit is a new asset class, so it starts with a calibration batch in
+  [the art pipeline](art-pipeline.md). Reuse a kit if one fits, because a look is more consistent and
+  LFS bandwidth is limited.
+- **Today's art:** `assets/nature/` and `assets/ground/` predate kits. Move them when a second biome
+  arrives, not before, along with the paths in `crates/protocol/src/forest.rs`.
 
 ## Keeping files small
 

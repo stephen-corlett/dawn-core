@@ -72,6 +72,12 @@ in `.claude/skills/`, the same way `CLAUDE.md` points to this file.
 Follow [docs/art-pipeline.md](docs/art-pipeline.md) to add or improve art. The `art-integration`
 skill runs the whole process, and asks a person for each art decision.
 
+## Designing zones
+
+Follow [docs/zone-pipeline.md](docs/zone-pipeline.md) to design or build a zone, against
+[docs/world/bible.md](docs/world/bible.md). The `zone-design` skill runs the whole process, and asks
+a person for each design decision.
+
 ## Testing
 
 Use the testing levels in [docs/architecture.md](docs/architecture.md), and test at
